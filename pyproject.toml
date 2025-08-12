@@ -1,0 +1,48 @@
+[project]
+name = "threatsmith"
+version = "0.1.0"
+description = "AI-powered secure code review and threat analysis engine"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+    {name = "Abdul Rahman Al-Kibbe"}
+]
+keywords = ["security", "code-review", "ai", "pasta", "owasp", "threat-modeling"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: Software Development :: Quality Assurance",
+]
+dependencies = [
+    "gitingest==0.1.5",
+    "langchain[anthropic,aws,google-genai,openai]>=0.3.26",
+    "langgraph>=0.5.0",
+    "playwright>=1.46.0",
+    "python-dotenv>=1.1.1",
+    "structlog>=25.4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.12.8"
+]
+
+[build-system]
+requires = ["uv_build>=0.8.7,<0.9.0"]
+build-backend = "uv_build"
+
+[project.scripts]
+threatsmith = "threatsmith.main:main"
+
+[project.urls]
+Homepage = "https://github.com/yogur/threatsmith"
+Repository = "https://github.com/yogur/threatsmith"
+Issues = "https://github.com/yogur/threatsmith/issues"
