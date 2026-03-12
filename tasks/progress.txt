@@ -11,3 +11,12 @@
   - The src layout is used with hatchling; imports use `from threatsmith.engines import Engine` (no `src.` prefix)
   - Empty __init__.py files are needed for the prompts and utils packages
 ---
+
+## 2026-03-12 - US-002
+- What was implemented: ClaudeCodeEngine in src/threatsmith/engines/claude_code.py; exports added to engines/__init__.py; tests/test_engines.py with 3 tests covering command construction, prompt ordering, and exit code passthrough
+- Files changed: src/threatsmith/engines/claude_code.py, src/threatsmith/engines/__init__.py, tests/test_engines.py, tests/test_package.py
+- **Learnings for future iterations:**
+  - The engine receives a single fully-assembled `prompt` string; prompt assembly (combining stage instructions, dynamic context, prior outputs) is the orchestrator's responsibility, not the engine's
+  - working_directory is passed as cwd= to subprocess.run()
+  - Mock subprocess.run with MagicMock().returncode to test exit code propagation
+---

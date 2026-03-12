@@ -5,10 +5,8 @@ class Engine(ABC):
     @abstractmethod
     def execute(
         self,
-        system_prompt: str,
-        user_prompt: str,
+        prompt: str,
         working_directory: str,
-        allowed_tools: list[str] | None = None,
     ) -> int:
-        """Execute the engine with the given prompts and return an exit code."""
+        """Execute the engine with the assembled prompt and return an exit code."""
         ...

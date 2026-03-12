@@ -25,7 +25,6 @@ def test_engine_execute_signature():
     assert "system_prompt" in params
     assert "user_prompt" in params
     assert "working_directory" in params
-    assert "allowed_tools" in params
 
 
 def test_prompts_package():

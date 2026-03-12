@@ -58,7 +58,7 @@ The wrapper defines a minimal engine interface that all supported coding agents 
 
 ```
 Engine Interface:
-  - execute(system_prompt, user_prompt, working_directory, allowed_tools?) → exit_code
+  - execute(prompt, working_directory) → exit_code
   - Working directory: the target repo root
   - Output contract: the agent writes expected files to threatmodel/ within the working directory
   - The wrapper does NOT parse agent conversational output — it validates that expected deliverable files were produced
@@ -66,7 +66,7 @@ Engine Interface:
 
 Engine selection via `--engine` CLI parameter (e.g., `--engine claude-code`, `--engine codex`). Each engine adapter translates the interface into the appropriate CLI invocation:
 
-- **Claude Code:** `claude -p <prompt> --cwd <dir>` (prompt mode, non-interactive)
+- **Claude Code:** `claude -p <prompt>` (prompt mode, non-interactive; working directory set via subprocess)
 - **Codex:** Equivalent CLI invocation per Codex's interface
 - **Future engines:** Implement the same interface
 

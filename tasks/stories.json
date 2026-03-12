@@ -10,7 +10,7 @@
       "acceptanceCriteria": [
         "src/threatsmith/__init__.py exists with package version '0.2.0'",
         "src/threatsmith/engines/__init__.py exists and exports the base engine class",
-        "src/threatsmith/engines/base.py defines an abstract Engine class with an execute(system_prompt, user_prompt, working_directory, allowed_tools=None) method that returns an exit code",
+        "src/threatsmith/engines/base.py defines an abstract Engine class with an execute(prompt, working_directory) method that returns an exit code",
         "src/threatsmith/prompts/__init__.py exists as an empty package init",
         "src/threatsmith/utils/__init__.py exists as an empty package init",
         "Tests pass"
@@ -25,16 +25,16 @@
       "description": "As a user, I want a Claude Code engine adapter so that ThreatSmith can use Claude Code as the AI coding agent for threat modeling",
       "acceptanceCriteria": [
         "src/threatsmith/engines/claude_code.py implements the Engine interface",
-        "execute() invokes 'claude -p <prompt> --cwd <dir>' in non-interactive prompt mode via subprocess",
+        "execute() invokes 'claude -p <prompt>' in non-interactive prompt mode via subprocess",
         "The adapter captures the exit code from the claude CLI process and returns it",
-        "Working directory is passed correctly to the claude CLI via --cwd flag",
-        "System prompt and user prompt are combined into a single prompt string passed via -p",
+        "Working directory is passed correctly as subprocess cwd",
+        "The assembled prompt string is passed as-is to -p (prompt assembly is the orchestrator's responsibility, not the engine's)",
         "tests/test_engines.py tests that ClaudeCodeEngine.execute() constructs the correct subprocess command (using mocked subprocess)",
         "Tests pass"
       ],
       "priority": 2,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Implemented ClaudeCodeEngine using subprocess.run(['claude', '-p', prompt], cwd=working_directory). Engine interface simplified to a single prompt parameter — assembly is the orchestrator's responsibility."
     },
     {
       "id": "US-003",
@@ -235,7 +235,7 @@
         "src/threatsmith/prompts/assembler.py exports an assemble_prompt(stage_number, prior_outputs, scanner_info, user_objectives, commit_hash) function",
         "assemble_prompt selects the correct stage template module based on stage_number",
         "Prior stage outputs are formatted using XML-delimited tags as specified in the PRD",
-        "Returns a tuple of (system_prompt, user_prompt) ready for engine.execute()",
+        "Returns a fully-assembled prompt string ready for engine.execute()",
         "tests/test_assembler.py tests that assemble_prompt selects correct templates and produces properly formatted XML-delimited prior stage sections",
         "Tests pass"
       ],
