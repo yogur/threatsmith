@@ -1,10 +1,20 @@
 ## Codebase Patterns
+- Do not write tests for string constants — test behavior and logic only
 - Package is under src/threatsmith with hatchling build backend
 - Tests go in tests/ at root level (configured via pyproject.toml testpaths)
 - Use `uv run pytest` and `uv run ruff check --fix && uv run ruff format` for quality checks
 - Engine abstraction uses ABC with abstract method returning int exit code
 - Engine execute() takes (prompt: str, working_directory: str) — single assembled prompt, no system/user split
 - get_engine(name) factory in engines/__init__.py maps string names to engine classes
+
+## 2026-03-13 - US-004
+- What was implemented: owasp_references.py with OWASP_WEB_TOP_10 (A01–A10), OWASP_API_TOP_10 (API1–API10), OWASP_LLM_TOP_10 (LLM01–LLM10), and OWASP_MOBILE_TOP_10 (M1–M10) as concise one-liner constants per PRD format. scanner_snippets.py with SEMGREP_SNIPPET, TRIVY_SNIPPET, GITLEAKS_SNIPPET, and SCANNER_SNIPPETS dict.
+- Files changed: src/threatsmith/prompts/owasp_references.py (new), src/threatsmith/prompts/scanner_snippets.py (new), tasks/stories.json
+- **Learnings for future iterations:**
+  - Scanner CLI invocations aligned with v0.1.0: `semgrep scan --config auto --severity=ERROR --json --quiet --no-error`, `trivy fs --format json --severity CRITICAL,HIGH --scanners vuln --quiet --exit-code 0`, `gitleaks dir --report-format json --report-path ... --no-banner --redact=100`
+  - Gitleaks v0.1.0 uses `gitleaks dir` (not `gitleaks detect --source`)
+  - Skipped test_constants.py — no value in asserting string content; test logic, not data
+---
 
 ## 2026-03-12 - US-001
 - What was implemented: Package structure with src/threatsmith/__init__.py (version 0.2.0), engines/base.py (abstract Engine class), engines/__init__.py (exports Engine), prompts/__init__.py (empty), utils/__init__.py (empty), and tests/test_package.py

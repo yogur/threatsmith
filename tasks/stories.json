@@ -68,8 +68,8 @@
         "Tests pass"
       ],
       "priority": 4,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Implemented owasp_references.py with concise one-liner OWASP_WEB_TOP_10, OWASP_API_TOP_10, OWASP_LLM_TOP_10, and OWASP_MOBILE_TOP_10 constants. Implemented scanner_snippets.py with SEMGREP_SNIPPET, TRIVY_SNIPPET, GITLEAKS_SNIPPET and SCANNER_SNIPPETS dict, aligned with v0.1.0 CLI invocations. Skipped test_constants.py — testing string constants has no value."
     },
     {
       "id": "US-005",
