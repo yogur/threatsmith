@@ -1,0 +1,13 @@
+## Codebase Patterns
+- Package is under src/threatsmith with hatchling build backend
+- Tests go in tests/ at root level (configured via pyproject.toml testpaths)
+- Use `uv run pytest` and `uv run ruff check --fix && uv run ruff format` for quality checks
+- Engine abstraction uses ABC with abstract method returning int exit code
+
+## 2026-03-12 - US-001
+- What was implemented: Package structure with src/threatsmith/__init__.py (version 0.2.0), engines/base.py (abstract Engine class), engines/__init__.py (exports Engine), prompts/__init__.py (empty), utils/__init__.py (empty), and tests/test_package.py
+- Files changed: src/threatsmith/__init__.py, src/threatsmith/engines/__init__.py, src/threatsmith/engines/base.py, src/threatsmith/prompts/__init__.py, src/threatsmith/utils/__init__.py, tests/__init__.py, tests/test_package.py
+- **Learnings for future iterations:**
+  - The src layout is used with hatchling; imports use `from threatsmith.engines import Engine` (no `src.` prefix)
+  - Empty __init__.py files are needed for the prompts and utils packages
+---

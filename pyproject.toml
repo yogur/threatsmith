@@ -12,10 +12,10 @@ dependencies = [
     "typer>=0.12"
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
-    "pytest>=8.0",
-    "ruff>=0.12.8"
+    "pytest>=9.0.2",
+    "ruff>=0.15.2"
 ]
 
 [build-system]
