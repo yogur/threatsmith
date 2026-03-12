@@ -40,3 +40,12 @@
   - working_directory is passed as cwd= to subprocess.run()
   - Mock subprocess.run with MagicMock().returncode to test exit code propagation
 ---
+
+## 2026-03-13 - US-005
+- What was implemented: Scanner detection utility in src/threatsmith/utils/scanners.py with detect_scanners() function using shutil.which() to check for semgrep, trivy, gitleaks. Returns dict with 'available' and 'unavailable' lists. Comprehensive test coverage in tests/test_scanners.py for all availability combinations.
+- Files changed: src/threatsmith/utils/scanners.py (new), tests/test_scanners.py (new), tasks/stories.json
+- **Learnings for future iterations:**
+  - Scanner list is centralized in detect_scanners() — adding a new scanner requires only adding to the `scanners` list, no structural changes needed
+  - shutil.which() returns path if found, None if not found; using list comprehension pattern for available/unavailable separation makes the code maintainable
+  - All 8 tests cover edge cases: all available, none available, mixed scenarios, and verifies shutil.which() is called for each scanner
+---

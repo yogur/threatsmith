@@ -84,8 +84,8 @@
         "Tests pass"
       ],
       "priority": 5,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Implemented detect_scanners() using shutil.which() to check for semgrep, trivy, gitleaks. Returns dict with available/unavailable lists. Comprehensive test coverage for all scanner availability combinations."
     },
     {
       "id": "US-006",
