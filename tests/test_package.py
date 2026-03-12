@@ -22,8 +22,7 @@ def test_engine_execute_signature():
 
     sig = inspect.signature(Engine.execute)
     params = list(sig.parameters)
-    assert "system_prompt" in params
-    assert "user_prompt" in params
+    assert "prompt" in params
     assert "working_directory" in params
 
 

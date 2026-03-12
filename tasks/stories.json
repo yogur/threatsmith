@@ -51,8 +51,8 @@
         "Tests pass"
       ],
       "priority": 3,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Implemented CodexEngine using subprocess.run(['codex', 'exec', prompt], cwd=working_directory). Added get_engine() factory returning ClaudeCodeEngine or CodexEngine by name. Fixed pre-existing test_engine_execute_signature to match simplified prompt/working_directory interface."
     },
     {
       "id": "US-004",

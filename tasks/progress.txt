@@ -3,6 +3,8 @@
 - Tests go in tests/ at root level (configured via pyproject.toml testpaths)
 - Use `uv run pytest` and `uv run ruff check --fix && uv run ruff format` for quality checks
 - Engine abstraction uses ABC with abstract method returning int exit code
+- Engine execute() takes (prompt: str, working_directory: str) — single assembled prompt, no system/user split
+- get_engine(name) factory in engines/__init__.py maps string names to engine classes
 
 ## 2026-03-12 - US-001
 - What was implemented: Package structure with src/threatsmith/__init__.py (version 0.2.0), engines/base.py (abstract Engine class), engines/__init__.py (exports Engine), prompts/__init__.py (empty), utils/__init__.py (empty), and tests/test_package.py
@@ -12,6 +14,14 @@
   - Empty __init__.py files are needed for the prompts and utils packages
 ---
 
+## 2026-03-13 - US-003
+- What was implemented: CodexEngine in src/threatsmith/engines/codex.py using `codex exec <prompt>` via subprocess; get_engine() factory in engines/__init__.py mapping 'claude-code' and 'codex' to their engine classes; tests for CodexEngine and get_engine() added to tests/test_engines.py; fixed outdated test_engine_execute_signature in tests/test_package.py to match the simplified prompt/working_directory interface
+- Files changed: src/threatsmith/engines/codex.py (new), src/threatsmith/engines/__init__.py, tests/test_engines.py, tests/test_package.py, tasks/stories.json
+- **Learnings for future iterations:**
+  - Codex non-interactive mode uses `codex exec "<prompt>"` (analogous to claude's `-p` flag)
+  - get_engine() factory uses a dict mapping names to classes, so adding a new engine only requires one dict entry
+  - test_package.py had an outdated signature test expecting system_prompt/user_prompt; the real interface is prompt/working_directory (simplified in US-002)
+---
 ## 2026-03-12 - US-002
 - What was implemented: ClaudeCodeEngine in src/threatsmith/engines/claude_code.py; exports added to engines/__init__.py; tests/test_engines.py with 3 tests covering command construction, prompt ordering, and exit code passthrough
 - Files changed: src/threatsmith/engines/claude_code.py, src/threatsmith/engines/__init__.py, tests/test_engines.py, tests/test_package.py

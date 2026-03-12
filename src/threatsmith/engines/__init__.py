@@ -1,4 +1,19 @@
 from threatsmith.engines.base import Engine
 from threatsmith.engines.claude_code import ClaudeCodeEngine
+from threatsmith.engines.codex import CodexEngine
 
-__all__ = ["Engine", "ClaudeCodeEngine"]
+
+def get_engine(engine_name: str) -> Engine:
+    """Return the correct engine instance for the given engine name."""
+    engines = {
+        "claude-code": ClaudeCodeEngine,
+        "codex": CodexEngine,
+    }
+    if engine_name not in engines:
+        raise ValueError(
+            f"Unknown engine: {engine_name!r}. Choose from: {list(engines)}"
+        )
+    return engines[engine_name]()
+
+
+__all__ = ["Engine", "ClaudeCodeEngine", "CodexEngine", "get_engine"]
