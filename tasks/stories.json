@@ -1,0 +1,306 @@
+{
+  "project": "ThreatSmith v0.2.0",
+  "branchName": "v0.2.0",
+  "description": "AI-powered PASTA threat modeling engine rewrite — thin Python wrapper around AI coding agents (Claude Code, Codex) replacing the LangGraph-based v0.1.0 implementation",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Package structure and engine abstraction",
+      "description": "As a developer, I want a clean package structure with an engine abstraction interface so that AI coding agent engines can be added as pluggable adapters",
+      "acceptanceCriteria": [
+        "src/threatsmith/__init__.py exists with package version '0.2.0'",
+        "src/threatsmith/engines/__init__.py exists and exports the base engine class",
+        "src/threatsmith/engines/base.py defines an abstract Engine class with an execute(system_prompt, user_prompt, working_directory, allowed_tools=None) method that returns an exit code",
+        "src/threatsmith/prompts/__init__.py exists as an empty package init",
+        "src/threatsmith/utils/__init__.py exists as an empty package init",
+        "Tests pass"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Claude Code engine adapter",
+      "description": "As a user, I want a Claude Code engine adapter so that ThreatSmith can use Claude Code as the AI coding agent for threat modeling",
+      "acceptanceCriteria": [
+        "src/threatsmith/engines/claude_code.py implements the Engine interface",
+        "execute() invokes 'claude -p <prompt> --cwd <dir>' in non-interactive prompt mode via subprocess",
+        "The adapter captures the exit code from the claude CLI process and returns it",
+        "Working directory is passed correctly to the claude CLI via --cwd flag",
+        "System prompt and user prompt are combined into a single prompt string passed via -p",
+        "tests/test_engines.py tests that ClaudeCodeEngine.execute() constructs the correct subprocess command (using mocked subprocess)",
+        "Tests pass"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Codex engine adapter and engine factory",
+      "description": "As a user, I want a Codex engine adapter so that ThreatSmith can use OpenAI Codex as an alternative AI coding agent",
+      "acceptanceCriteria": [
+        "src/threatsmith/engines/codex.py implements the Engine interface",
+        "execute() invokes the Codex CLI with the appropriate flags via subprocess",
+        "The adapter captures the exit code and returns it",
+        "Working directory is passed correctly to the Codex CLI",
+        "engines/__init__.py exports both ClaudeCodeEngine and CodexEngine",
+        "A get_engine(engine_name: str) factory function returns the correct engine instance for 'claude-code' or 'codex'",
+        "tests/test_engines.py tests that get_engine() returns correct engine types and that CodexEngine constructs the correct subprocess command",
+        "Tests pass"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "OWASP reference constants and scanner instruction snippets",
+      "description": "As a developer, I want OWASP Top 10 references and scanner instruction snippets stored as constants so that they can be injected into stage prompts dynamically",
+      "acceptanceCriteria": [
+        "src/threatsmith/prompts/owasp_references.py exports OWASP_WEB_TOP_10 constant with A01-A10 category names and one-line descriptions",
+        "owasp_references.py exports OWASP_API_TOP_10 constant with API security categories",
+        "owasp_references.py exports OWASP_LLM_TOP_10 constant with LLM security categories",
+        "src/threatsmith/prompts/scanner_snippets.py exports per-scanner instruction templates for Semgrep, Trivy, and Gitleaks",
+        "Each scanner snippet includes a usage example command as specified in the PRD",
+        "tests/test_constants.py verifies all OWASP constants contain expected category identifiers and all scanner snippets contain expected scanner names and example commands",
+        "Tests pass"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Scanner detection utility",
+      "description": "As a user, I want ThreatSmith to automatically detect which security scanners are available on my system so that only relevant scanner instructions are included in the analysis",
+      "acceptanceCriteria": [
+        "src/threatsmith/utils/scanners.py exports a detect_scanners() function",
+        "detect_scanners() checks for Semgrep, Trivy, and Gitleaks using shutil.which()",
+        "Returns a dict with 'available' and 'unavailable' lists of scanner names",
+        "Adding a new scanner requires only adding an entry to a scanners list — no structural changes",
+        "tests/test_scanners.py tests detect_scanners() with mocked shutil.which() for various availability combinations",
+        "Tests pass"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Metadata generation utility",
+      "description": "As a user, I want ThreatSmith to generate a metadata.json file capturing run context so that threat model provenance is tracked",
+      "acceptanceCriteria": [
+        "src/threatsmith/utils/metadata.py exports a generate_metadata() function",
+        "generate_metadata() captures: threatsmith_version, engine name, commit_hash (via git rev-parse HEAD), branch (via git branch --show-current), ISO 8601 timestamp, scanners_available, scanners_unavailable, and user_objectives",
+        "Returns a dict suitable for JSON serialization",
+        "A write_metadata(output_dir, metadata) function writes metadata.json to the specified directory",
+        "tests/test_metadata.py tests generate_metadata() returns all required fields with correct types and tests write_metadata() creates a valid JSON file",
+        "Tests pass"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "Stage 1 prompt template — Define Objectives",
+      "description": "As a developer, I want a prompt template for PASTA Stage 1 so that the AI agent receives focused instructions for identifying business objectives and data sensitivity",
+      "acceptanceCriteria": [
+        "src/threatsmith/prompts/stage_01_objectives.py exports STAGE_PROMPT constant with stage 1 instructions covering business objectives, compliance requirements (GDPR, HIPAA, PCI-DSS), business impact analysis, and operational impact",
+        "Module exports a build_prompt(context: dict) function that returns a formatted prompt string",
+        "Prompt instructs the agent to examine README, docs, config files, data models, and package metadata",
+        "Prompt instructs the agent to write output to threatmodel/01-objectives.md",
+        "build_prompt injects user-supplied business and security objectives when provided",
+        "Tests pass"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Stage 2 prompt template — Define Technical Scope",
+      "description": "As a developer, I want a prompt template for PASTA Stage 2 so that the AI agent receives focused instructions for mapping the technical environment",
+      "acceptanceCriteria": [
+        "src/threatsmith/prompts/stage_02_technical_scope.py exports STAGE_PROMPT constant covering technology stack, dependencies, data classification, supply chain landscape, deployment patterns, containerization, cloud configs, and CI/CD",
+        "Module exports a build_prompt(context: dict) function that injects Stage 1 output using XML-delimited format (<prior_stages><stage_01_objectives>...</stage_01_objectives></prior_stages>)",
+        "Prompt instructs the agent to write output to threatmodel/02-technical-scope.md",
+        "Tests pass"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Stage 3 prompt template — Application Decomposition",
+      "description": "As a developer, I want a prompt template for PASTA Stage 3 so that the AI agent receives focused instructions for decomposing the application architecture",
+      "acceptanceCriteria": [
+        "src/threatsmith/prompts/stage_03_decomposition.py exports STAGE_PROMPT constant covering use case identification, entry points, trust levels, actors, assets, services, roles, data sources, and Mermaid DFDs with trust boundaries",
+        "Module exports a build_prompt(context: dict) function that injects Stages 1-2 outputs using XML-delimited format",
+        "Prompt instructs the agent to write output to threatmodel/03-application-decomposition.md",
+        "Tests pass"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-010",
+      "title": "Stage 4 prompt template — Threat Analysis",
+      "description": "As a developer, I want a prompt template for PASTA Stage 4 so that the AI agent receives focused instructions for systematic threat identification with OWASP coverage validation",
+      "acceptanceCriteria": [
+        "src/threatsmith/prompts/stage_04_threat_analysis.py exports STAGE_PROMPT constant covering STRIDE analysis, probabilistic attack scenarios, threat intelligence correlation, and OWASP Top 10 cross-referencing",
+        "Module exports a build_prompt(context: dict) function that injects Stages 1-3 outputs using XML-delimited format",
+        "build_prompt always injects OWASP Web Top 10 reference from owasp_references.py",
+        "build_prompt conditionally injects OWASP API Top 10 when Stage 2 output contains API-related keywords (REST, GraphQL, gRPC, API gateway)",
+        "build_prompt conditionally injects OWASP LLM Top 10 when Stage 2 output contains LLM-related keywords (LangChain, OpenAI, vector database, LLM)",
+        "Prompt instructs the agent to write output to threatmodel/04-threat-analysis.md",
+        "Prompt requires complete coverage of all components — partial analysis is unacceptable",
+        "tests/test_stage_04.py tests conditional OWASP variant injection based on Stage 2 content",
+        "Tests pass"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-011",
+      "title": "Stage 5 prompt template — Vulnerability and Weakness Analysis",
+      "description": "As a developer, I want a prompt template for PASTA Stage 5 so that the AI agent receives focused instructions for vulnerability analysis with dynamic scanner integration",
+      "acceptanceCriteria": [
+        "src/threatsmith/prompts/stage_05_vulnerability.py exports STAGE_PROMPT constant covering vulnerability data examination, threat-to-vulnerability mapping, design flaw analysis, CVSS 3.1 scoring, CWE/CVE enumeration, and remediation guidance",
+        "Module exports a build_prompt(context: dict) function that injects Stages 1-4 outputs using XML-delimited format",
+        "build_prompt conditionally appends scanner instruction snippets from scanner_snippets.py for each available scanner",
+        "build_prompt omits scanner snippets for unavailable scanners",
+        "Prompt instructs the agent to write output to threatmodel/05-vulnerability-analysis.md",
+        "tests/test_stage_05.py tests that scanner snippets are included/excluded based on scanner availability",
+        "Tests pass"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "Stage 6 prompt template — Attack Modeling",
+      "description": "As a developer, I want a prompt template for PASTA Stage 6 so that the AI agent receives focused instructions for attack surface analysis and attack tree development",
+      "acceptanceCriteria": [
+        "src/threatsmith/prompts/stage_06_attack_modeling.py exports STAGE_PROMPT constant covering attack surface analysis, Mermaid attack tree development, MITRE ATT&CK mapping, and attack-to-vulnerability-to-exploit analysis",
+        "Module exports a build_prompt(context: dict) function that injects Stages 1-5 outputs using XML-delimited format",
+        "Prompt instructs the agent to write output to threatmodel/06-attack-modeling.md",
+        "Prompt requires coverage of all significant threats from Stage 4",
+        "Tests pass"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-013",
+      "title": "Stage 7 prompt template — Risk and Impact Analysis",
+      "description": "As a developer, I want a prompt template for PASTA Stage 7 so that the AI agent receives focused instructions for risk qualification, countermeasures, and remediation roadmap",
+      "acceptanceCriteria": [
+        "src/threatsmith/prompts/stage_07_risk_impact.py exports STAGE_PROMPT constant covering business impact qualification/quantification, countermeasure identification, residual risk assessment, mitigation effectiveness vs cost analysis, and prioritized remediation roadmap",
+        "Module exports a build_prompt(context: dict) function that injects Stages 1-6 outputs using XML-delimited format",
+        "Prompt instructs the agent to write output to threatmodel/07-risk-and-impact-analysis.md",
+        "Tests pass"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-014",
+      "title": "Stage 8 prompt template — Report Consolidation",
+      "description": "As a developer, I want a prompt template for the post-pipeline report consolidation step so that all stage outputs are packaged into a single cohesive deliverable",
+      "acceptanceCriteria": [
+        "src/threatsmith/prompts/stage_08_report.py exports STAGE_PROMPT constant for consolidation — executive summary, no new analysis, pure formatting of stages 1-7 outputs",
+        "Module exports a build_prompt(context: dict) function that injects Stages 1-7 outputs using XML-delimited format",
+        "Prompt instructs the agent to preserve all technical content, Mermaid diagrams, scores, and recommendations",
+        "Prompt instructs the agent to write output to threatmodel/08-report.md",
+        "Tests pass"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-015",
+      "title": "Prompt assembler and context injection",
+      "description": "As a developer, I want a prompt assembler that selects the correct stage template and injects dynamic context so that each engine invocation receives a complete prompt",
+      "acceptanceCriteria": [
+        "src/threatsmith/prompts/assembler.py exports an assemble_prompt(stage_number, prior_outputs, scanner_info, user_objectives, commit_hash) function",
+        "assemble_prompt selects the correct stage template module based on stage_number",
+        "Prior stage outputs are formatted using XML-delimited tags as specified in the PRD",
+        "Returns a tuple of (system_prompt, user_prompt) ready for engine.execute()",
+        "tests/test_assembler.py tests that assemble_prompt selects correct templates and produces properly formatted XML-delimited prior stage sections",
+        "Tests pass"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-016",
+      "title": "Orchestrator with sequential pipeline and output validation",
+      "description": "As a user, I want an orchestrator that runs all 7 PASTA stages plus report consolidation sequentially with accumulated context so that a complete threat model is produced",
+      "acceptanceCriteria": [
+        "src/threatsmith/orchestrator.py exports an Orchestrator class",
+        "Orchestrator accepts engine, repo_path, output_dir, scanner_info, user_objectives, commit_hash, and verbose flag",
+        "run() method executes stages 1-7 plus report consolidation (stage 8) sequentially",
+        "After each stage, the orchestrator reads the produced deliverable and adds it to accumulated context for subsequent stages",
+        "After each stage, the orchestrator validates that the expected output file was created in the output directory",
+        "If a stage fails (non-zero exit code or missing output file), the orchestrator retries once then aborts with a clear error message",
+        "Verbose mode logs stage start/completion and context sizes",
+        "tests/test_orchestrator.py tests full pipeline execution with a mock engine that writes expected deliverable files, verifies context accumulation, and tests retry-then-abort behavior",
+        "Tests pass"
+      ],
+      "priority": 16,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-017",
+      "title": "CLI interface with Typer",
+      "description": "As a user, I want a CLI interface so that I can run ThreatSmith from the command line with configurable options",
+      "acceptanceCriteria": [
+        "src/threatsmith/main.py defines a Typer app with the 'threatsmith' command",
+        "Positional 'path' argument accepts a target repo path",
+        "--engine option defaults to 'claude-code' and accepts 'codex'",
+        "--business-objectives and --security-objectives accept optional string values",
+        "--output-dir option defaults to 'threatmodel/'",
+        "-v / --verbose flag enables verbose logging",
+        "CLI creates the output directory if it does not exist",
+        "CLI calls detect_scanners(), generate_metadata(), and runs the orchestrator",
+        "CLI writes metadata.json to the output directory before starting the pipeline",
+        "Entry point 'threatsmith' in pyproject.toml points to threatsmith.main:main",
+        "Running 'threatsmith --help' displays all options with descriptions",
+        "tests/test_cli.py tests CLI argument parsing with typer.testing.CliRunner and verifies --help output includes all documented parameters",
+        "Tests pass"
+      ],
+      "priority": 17,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-018",
+      "title": "End-to-end integration test",
+      "description": "As a developer, I want an end-to-end integration test so that the full pipeline from CLI invocation to deliverable output is verified",
+      "acceptanceCriteria": [
+        "tests/test_e2e.py tests full pipeline from CLI entry point through orchestrator with a mock engine",
+        "Mock engine writes realistic deliverable files for each stage",
+        "Test verifies all 8 deliverable files (01-07 + 08-report) are created in the output directory",
+        "Test verifies metadata.json is created with all required fields",
+        "Test verifies context accumulates correctly — stage N prompt contains outputs from stages 1 through N-1",
+        "Test verifies that missing output file after engine execution triggers retry then abort",
+        "Tests pass"
+      ],
+      "priority": 18,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}
