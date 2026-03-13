@@ -180,8 +180,8 @@
         "Tests pass"
       ],
       "priority": 11,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Implemented STAGE_PROMPT with five analysis pillars: Scanner-Augmented Vulnerability Discovery (scanner correlation with Stage 4 threats, false positive assessment, gap identification), Threat-to-Vulnerability Mapping with Threat Trees (root cause analysis, threat tree construction, exploitability assessment, vulnerability chain analysis), Design Flaw Analysis (use case security review, abuse case development, trust boundary violation analysis, security control gap analysis), Vulnerability Scoring and Classification (CVSS 3.1 with full vector components, CWE/CVE enumeration, environmental context), Impact and Exposure Assessment (affected systems/data mapping, historical vulnerability context, current state assessment, change impact analysis, remediation guidance with effort estimates). build_prompt() injects Stages 1-4 via XML-delimited format, conditionally injects scanner snippets from scanner_snippets.py based on scanners_available list. 40 tests covering build_prompt behavior, scanner snippet injection, and STAGE_PROMPT structure."
     },
     {
       "id": "US-012",

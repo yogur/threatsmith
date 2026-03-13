@@ -8,6 +8,8 @@
 - get_engine(name) factory in engines/__init__.py maps string names to engine classes
 - Stage prompt modules export STAGE_PROMPT constant + build_prompt(context: dict) -> str
 - Use .replace() not .format() for prompt placeholders — avoids curly brace escaping issues in prompt text
+- Stage 5 introduces `scanners_available` context key (list of scanner name strings); scanner snippets from scanner_snippets.py are conditionally injected via `{scanner_section}` placeholder
+- When testing for absence of injected section headers, use `"## SECTION NAME"` (with ##) to avoid matching the phrase inside the prompt body text
 - build_prompt context dict uses optional keys: business_objectives, security_objectives (str or None)
 - Prior stage output injection uses XML-delimited format: `<prior_stages><stage_NN_name>...</stage_NN_name></prior_stages>`
 - Prior stage context key convention: `stage_01_output` (raw markdown string from that stage's deliverable)
@@ -110,4 +112,16 @@
   - The v0.1.0 prompt was heavily STRIDE-focused; v0.2.0 adds three additional pillars (probabilistic scenarios, regression analysis, threat intel correlation) making it a more complete threat analysis
   - Mobile OWASP Top 10 keywords: android, ios, react native, flutter, swift, kotlin, mobile
   - 48 tests: 40 for build_prompt behavior (prior stages, XML wrapping, OWASP conditional injection for all four variants with keyword coverage) + 8 structural checks on STAGE_PROMPT
+---
+
+## 2026-03-13 - US-011
+- What was implemented: Stage 5 prompt template in src/threatsmith/prompts/stage_05_vulnerability.py with STAGE_PROMPT constant and build_prompt(context) function. STAGE_PROMPT covers five analysis pillars: Scanner-Augmented Vulnerability Discovery (scanner correlation with Stage 4 threats, false positive assessment, gap identification), Threat-to-Vulnerability Mapping with Threat Trees (root cause analysis, AND/OR threat tree construction, exploitability assessment, vulnerability chain analysis), Design Flaw Analysis (use case security review, abuse case development, trust boundary violation analysis, security control gap analysis), Vulnerability Scoring and Classification (CVSS 3.1 with all 8 vector components documented, CWE classification, CVE cross-reference, environmental context adjustment), Impact and Exposure Assessment (affected systems/data mapping, historical vulnerability context, current state assessment, change impact analysis, remediation guidance with effort estimates and priority tiers). Three-phase investigation approach (context integration + scanner execution → systematic identification → cross-cutting validation). build_prompt() injects Stages 1-4 outputs via XML-delimited format, conditionally injects scanner snippets from scanner_snippets.py based on `scanners_available` context key.
+- Files changed: src/threatsmith/prompts/stage_05_vulnerability.py (new), tests/test_stage_05.py (new), tasks/stories.json, tasks/progress.txt
+- **Learnings for future iterations:**
+  - Stage 5 is the first stage to use scanner snippets — imports SCANNER_SNIPPETS dict from scanner_snippets.py and injects via a `{scanner_section}` placeholder (distinct from `{prior_stages_section}`)
+  - Scanner injection is driven by `scanners_available` context key (list of scanner name strings); unknown scanner names are silently ignored (snippet lookup returns None)
+  - When testing for absence of a dynamically injected section header (e.g., "SCANNER INSTRUCTIONS"), use the markdown heading prefix `"## SCANNER INSTRUCTIONS"` to avoid false matches against the same phrase appearing in the prompt body text
+  - Stage 5 build_prompt handles four prior stage outputs (stage_01_output through stage_04_output) — each independently optional
+  - The v0.1.0 prompt was a monolithic system prompt with all scanner logic baked into the agent class; v0.2.0 separates the prompt template from scanner execution — the wrapper detects scanners and passes availability info, the prompt tells the agent to run them
+  - 40 tests: 29 for build_prompt behavior (prior stages XML wrapping, scanner snippet injection for all three scanners, empty/None/unknown scanner handling, combined scanner + prior stages) + 11 structural checks on STAGE_PROMPT
 ---
