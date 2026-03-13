@@ -163,8 +163,8 @@
         "Tests pass"
       ],
       "priority": 10,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Implemented STAGE_PROMPT with four analysis pillars: STRIDE Threat Analysis (systematic per-component coverage), Probabilistic Attack Scenario Analysis (scenario narratives, kill chains, probability assessment), Regression Analysis on Security Events (technology-specific history, architectural patterns, dependency threat landscape), Threat Intelligence Correlation (OWASP cross-referencing, threat actor profiling, supply chain assessment). build_prompt() injects Stages 1-3 via XML-delimited format, always includes OWASP Web Top 10, conditionally injects API/LLM/Mobile Top 10 based on Stage 2 keyword matching. 48 tests covering build_prompt behavior, OWASP conditional injection, and STAGE_PROMPT structure."
     },
     {
       "id": "US-011",

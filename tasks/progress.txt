@@ -11,6 +11,7 @@
 - build_prompt context dict uses optional keys: business_objectives, security_objectives (str or None)
 - Prior stage output injection uses XML-delimited format: `<prior_stages><stage_NN_name>...</stage_NN_name></prior_stages>`
 - Prior stage context key convention: `stage_01_output` (raw markdown string from that stage's deliverable)
+- OWASP conditional injection uses keyword lists (_API_KEYWORDS, _LLM_KEYWORDS, _MOBILE_KEYWORDS) matched case-insensitively against Stage 2 output; Web Top 10 is always included
 
 ## 2026-03-13 - US-004
 - What was implemented: owasp_references.py with OWASP_WEB_TOP_10 (A01–A10), OWASP_API_TOP_10 (API1–API10), OWASP_LLM_TOP_10 (LLM01–LLM10), and OWASP_MOBILE_TOP_10 (M1–M10) as concise one-liner constants per PRD format. scanner_snippets.py with SEMGREP_SNIPPET, TRIVY_SNIPPET, GITLEAKS_SNIPPET, and SCANNER_SNIPPETS dict.
@@ -97,4 +98,16 @@
   - Abuse cases in Stage 3 are tied to specific use cases (not generic threats) — generic threats belong in Stage 4's STRIDE analysis
   - Mermaid diagram guidance includes the parentheses-in-labels pitfall (use hyphens/commas instead) carried forward from v0.1.0 experience
   - 17 tests: 13 for build_prompt behavior (both stages, partial stages, XML wrapping, empty/None handling, output file reference, placeholder removal, instructional context) + 4 structural checks on STAGE_PROMPT
+---
+
+## 2026-03-13 - US-010
+- What was implemented: Stage 4 prompt template in src/threatsmith/prompts/stage_04_threat_analysis.py with STAGE_PROMPT constant and build_prompt(context) function. STAGE_PROMPT covers four analysis pillars: STRIDE Threat Analysis (systematic per-component coverage with all six STRIDE categories), Probabilistic Attack Scenario Analysis (scenario narratives with preconditions, probability assessment, kill chain mapping, cross-component cascading), Regression Analysis on Security Events (technology-specific threat history, architectural pattern analysis, component-level regression, similar incident patterns, dependency threat landscape), Threat Intelligence Correlation (OWASP cross-referencing, public vulnerability pattern matching, threat actor profiling with four actor classes, supply chain threat assessment, emerging threat patterns). Three-phase investigation approach (context integration → systematic identification → cross-cutting validation). build_prompt() injects Stages 1-3 outputs via XML-delimited format, always includes OWASP Web Top 10, conditionally injects API/LLM/Mobile Top 10 based on case-insensitive keyword matching against Stage 2 output.
+- Files changed: src/threatsmith/prompts/stage_04_threat_analysis.py (new), tests/test_stage_04.py (new), tasks/stories.json, tasks/progress.txt
+- **Learnings for future iterations:**
+  - Stage 4 is the first stage to use OWASP references — imports from owasp_references.py and injects them via a separate `{owasp_section}` placeholder (distinct from `{prior_stages_section}`)
+  - OWASP Web Top 10 is always injected; API, LLM, and Mobile variants are conditional on Stage 2 keyword presence — keywords are matched case-insensitively against the full stage_02_output string
+  - Stage 4 build_prompt handles three prior stage outputs (stage_01_output, stage_02_output, stage_03_output) — each independently optional
+  - The v0.1.0 prompt was heavily STRIDE-focused; v0.2.0 adds three additional pillars (probabilistic scenarios, regression analysis, threat intel correlation) making it a more complete threat analysis
+  - Mobile OWASP Top 10 keywords: android, ios, react native, flutter, swift, kotlin, mobile
+  - 48 tests: 40 for build_prompt behavior (prior stages, XML wrapping, OWASP conditional injection for all four variants with keyword coverage) + 8 structural checks on STAGE_PROMPT
 ---
