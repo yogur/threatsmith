@@ -49,3 +49,14 @@
   - shutil.which() returns path if found, None if not found; using list comprehension pattern for available/unavailable separation makes the code maintainable
   - All 8 tests cover edge cases: all available, none available, mixed scenarios, and verifies shutil.which() is called for each scanner
 ---
+
+## 2026-03-13 - US-006
+- What was implemented: Metadata generation utility in src/threatsmith/utils/metadata.py with generate_metadata() function capturing threatsmith_version (from __init__.__version__), engine_name, commit_hash (via git rev-parse HEAD), branch (via git branch --show-current), ISO 8601 timestamp with UTC timezone, scanners_available, scanners_unavailable, and user_objectives. write_metadata(output_dir, metadata) writes JSON file. Graceful fallback to 'unknown' for git commands if they fail.
+- Files changed: src/threatsmith/utils/metadata.py (new), tests/test_metadata.py (new), tasks/stories.json
+- **Learnings for future iterations:**
+  - Metadata dict is JSON-serializable (all scalar types: str, list)
+  - Git command failures (missing git, not in repo, etc.) are caught gracefully with broad Exception handler (not just CalledProcessError)
+  - UTC timezone import via `from datetime import UTC` (Python 3.12+) simpler than timezone.utc
+  - Test mocking pattern: mock subprocess.run with side_effect list of mock objects with stdout.strip()
+  - 9 tests cover all required fields, types, engine capture, scanner lists, objectives, git failures, ISO 8601 format, JSON serialization, and write_metadata file creation
+---
