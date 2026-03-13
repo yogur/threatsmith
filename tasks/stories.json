@@ -116,8 +116,8 @@
         "Tests pass"
       ],
       "priority": 7,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Implemented STAGE_PROMPT covering all four PASTA Stage 1 pillars (Business Objectives, Security/Compliance/Legal, Business Impact Analysis with full data sensitivity depth, Operational Impact). build_prompt() injects user-supplied business/security objectives via placeholder replacement. Hybrid output format: four required H2 headings with flexible sub-structure. 11 tests covering build_prompt behavior."
     },
     {
       "id": "US-008",

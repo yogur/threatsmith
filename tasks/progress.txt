@@ -6,6 +6,9 @@
 - Engine abstraction uses ABC with abstract method returning int exit code
 - Engine execute() takes (prompt: str, working_directory: str) — single assembled prompt, no system/user split
 - get_engine(name) factory in engines/__init__.py maps string names to engine classes
+- Stage prompt modules export STAGE_PROMPT constant + build_prompt(context: dict) -> str
+- Use .replace() not .format() for prompt placeholders — avoids curly brace escaping issues in prompt text
+- build_prompt context dict uses optional keys: business_objectives, security_objectives (str or None)
 
 ## 2026-03-13 - US-004
 - What was implemented: owasp_references.py with OWASP_WEB_TOP_10 (A01–A10), OWASP_API_TOP_10 (API1–API10), OWASP_LLM_TOP_10 (LLM01–LLM10), and OWASP_MOBILE_TOP_10 (M1–M10) as concise one-liner constants per PRD format. scanner_snippets.py with SEMGREP_SNIPPET, TRIVY_SNIPPET, GITLEAKS_SNIPPET, and SCANNER_SNIPPETS dict.
@@ -59,4 +62,15 @@
   - UTC timezone import via `from datetime import UTC` (Python 3.12+) simpler than timezone.utc
   - Test mocking pattern: mock subprocess.run with side_effect list of mock objects with stdout.strip()
   - 9 tests cover all required fields, types, engine capture, scanner lists, objectives, git failures, ISO 8601 format, JSON serialization, and write_metadata file creation
+---
+
+## 2026-03-13 - US-007
+- What was implemented: Stage 1 prompt template in src/threatsmith/prompts/stage_01_objectives.py with STAGE_PROMPT constant and build_prompt(context) function. STAGE_PROMPT covers all four PASTA Stage 1 pillars: Business Objectives, Security/Compliance/Legal Requirements, Business Impact Analysis (with full data sensitivity classification depth), and Operational Impact. Hybrid output format — four required H2 headings with flexible sub-structure. Three-phase investigation approach (documentation → data layer → business logic). build_prompt() injects user-supplied business/security objectives via placeholder replacement, treating None and empty strings as absent.
+- Files changed: src/threatsmith/prompts/stage_01_objectives.py (new), tests/test_stage_01_objectives.py (new), tasks/stories.json, tasks/progress.txt
+- **Learnings for future iterations:**
+  - Use `.replace("{placeholder}", value)` instead of `.format()` for prompt templates — prompt text frequently contains curly braces in code examples that would need escaping with `.format()`
+  - Stage prompt modules follow a consistent pattern: STAGE_PROMPT constant with `{user_objectives_section}` placeholder + `build_prompt(context: dict) -> str` function
+  - `context.get("key") or None` pattern handles both missing keys and empty strings uniformly
+  - Prompt design: v0.1.0 missed Business Impact Analysis and Operational Impact pillars from PASTA Stage 1 — v0.2.0 covers all four explicitly
+  - 11 tests: 9 for build_prompt behavior (objectives injection, empty/None handling, output file reference, placeholder removal) + 2 structural checks on STAGE_PROMPT
 ---
