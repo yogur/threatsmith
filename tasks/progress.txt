@@ -87,3 +87,14 @@
   - The "level of impact" dimension (blast radius, data access, ripple effects) is what distinguishes a useful technical scope from a naive tech inventory
   - 12 tests: 9 for build_prompt behavior (XML injection, empty/None handling, output file reference, placeholder removal, instructional context) + 3 structural checks on STAGE_PROMPT
 ---
+
+## 2026-03-13 - US-009
+- What was implemented: Stage 3 prompt template in src/threatsmith/prompts/stage_03_decomposition.py with STAGE_PROMPT constant and build_prompt(context) function. STAGE_PROMPT covers five analysis pillars: Use Case Identification (with explicit abuse cases feeding Stage 4), Actors Roles and Trust Levels (4-tier classification: untrusted/semi-trusted/trusted/privileged), Entry Points and Attack Surface (comprehensive catalog with per-entry-point metadata), Assets and Data Inventory (data classification mapping from Stage 1), Data Flow Diagrams and Trust Boundaries (minimum 2 Mermaid DFDs: architecture overview + sensitive data flow). Three-phase investigation approach (entry point discovery → actor/asset tracing → data flow/trust boundary mapping). build_prompt() injects Stages 1-2 outputs via XML-delimited format with selective inclusion (only present stages are wrapped).
+- Files changed: src/threatsmith/prompts/stage_03_decomposition.py (new), tests/test_stage_03_decomposition.py (new), tasks/stories.json, tasks/progress.txt
+- **Learnings for future iterations:**
+  - Stage 3 build_prompt handles two prior stage outputs (stage_01_output, stage_02_output) — each is independently optional and only included in XML when present
+  - The `or None` pattern consistently handles both missing keys and empty strings across all stage build_prompt functions
+  - Abuse cases in Stage 3 are tied to specific use cases (not generic threats) — generic threats belong in Stage 4's STRIDE analysis
+  - Mermaid diagram guidance includes the parentheses-in-labels pitfall (use hyphens/commas instead) carried forward from v0.1.0 experience
+  - 17 tests: 13 for build_prompt behavior (both stages, partial stages, XML wrapping, empty/None handling, output file reference, placeholder removal, instructional context) + 4 structural checks on STAGE_PROMPT
+---
