@@ -9,6 +9,8 @@
 - Stage prompt modules export STAGE_PROMPT constant + build_prompt(context: dict) -> str
 - Use .replace() not .format() for prompt placeholders — avoids curly brace escaping issues in prompt text
 - build_prompt context dict uses optional keys: business_objectives, security_objectives (str or None)
+- Prior stage output injection uses XML-delimited format: `<prior_stages><stage_NN_name>...</stage_NN_name></prior_stages>`
+- Prior stage context key convention: `stage_01_output` (raw markdown string from that stage's deliverable)
 
 ## 2026-03-13 - US-004
 - What was implemented: owasp_references.py with OWASP_WEB_TOP_10 (A01–A10), OWASP_API_TOP_10 (API1–API10), OWASP_LLM_TOP_10 (LLM01–LLM10), and OWASP_MOBILE_TOP_10 (M1–M10) as concise one-liner constants per PRD format. scanner_snippets.py with SEMGREP_SNIPPET, TRIVY_SNIPPET, GITLEAKS_SNIPPET, and SCANNER_SNIPPETS dict.
@@ -73,4 +75,15 @@
   - `context.get("key") or None` pattern handles both missing keys and empty strings uniformly
   - Prompt design: v0.1.0 missed Business Impact Analysis and Operational Impact pillars from PASTA Stage 1 — v0.2.0 covers all four explicitly
   - 11 tests: 9 for build_prompt behavior (objectives injection, empty/None handling, output file reference, placeholder removal) + 2 structural checks on STAGE_PROMPT
+---
+
+## 2026-03-13 - US-008
+- What was implemented: Stage 2 prompt template in src/threatsmith/prompts/stage_02_technical_scope.py with STAGE_PROMPT constant and build_prompt(context) function. STAGE_PROMPT covers six analysis pillars: Project Boundary Definition, Technology Stack Mapping, Dependency and Supply Chain Analysis (with level of impact assessment), Data Classification and Flow Boundaries, Infrastructure and Deployment, Integration Points and External Attack Surface. Three-phase investigation approach (manifest/config → dependency/architecture tracing → boundary and impact assessment). build_prompt() injects Stage 1 output via XML-delimited `<prior_stages><stage_01_objectives>...</stage_01_objectives></prior_stages>` format.
+- Files changed: src/threatsmith/prompts/stage_02_technical_scope.py (new), tests/test_stage_02_technical_scope.py (new), tasks/stories.json, tasks/progress.txt
+- **Learnings for future iterations:**
+  - Prior stage injection uses `{prior_stages_section}` placeholder and `.replace()` — same pattern as user objectives but wrapping content in XML tags
+  - Context key for prior stage output is `stage_01_output` (raw markdown string); subsequent stages should use `stage_02_output`, etc.
+  - Stage 2 deliberately does NOT re-classify data — it maps technical components TO classifications from Stage 1. This separation of concerns avoids redundancy across stages.
+  - The "level of impact" dimension (blast radius, data access, ripple effects) is what distinguishes a useful technical scope from a naive tech inventory
+  - 12 tests: 9 for build_prompt behavior (XML injection, empty/None handling, output file reference, placeholder removal, instructional context) + 3 structural checks on STAGE_PROMPT
 ---
