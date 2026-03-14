@@ -2,7 +2,6 @@
 
 import pytest
 
-from threatsmith.prompts.assembler import assemble_prompt
 from threatsmith.prompts import (
     stage_01_objectives,
     stage_02_technical_scope,
@@ -13,6 +12,7 @@ from threatsmith.prompts import (
     stage_07_risk_impact,
     stage_08_report,
 )
+from threatsmith.prompts.assembler import assemble_prompt
 
 
 class TestTemplateSelection:

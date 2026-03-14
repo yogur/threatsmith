@@ -259,8 +259,8 @@
         "Tests pass"
       ],
       "priority": 16,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Implemented Orchestrator as a dataclass in src/threatsmith/orchestrator.py. run() iterates stages 1-8, assembles prompts via assemble_prompt(), calls engine.execute(), validates output file existence, reads deliverable into accumulated context. Retry logic: each stage gets 2 attempts (original + 1 retry). Verbose mode prints stage start, non-zero exit code, missing file warnings, completion with cumulative context size. 10 tests covering full pipeline success, context accumulation, retry-then-abort, verbose/non-verbose output, and custom output_dir."
     },
     {
       "id": "US-017",
