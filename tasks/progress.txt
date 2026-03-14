@@ -1,3 +1,13 @@
+## 2026-03-14 - US-015
+- What was implemented: `src/threatsmith/prompts/assembler.py` with `assemble_prompt(stage_number, prior_outputs, scanner_info, user_objectives, commit_hash, output_dir)` function. Maps stage numbers 1–8 to the correct stage module, builds the appropriate typed context dataclass from the caller's flat dicts, and delegates to each stage's `build_prompt()`. Raises `ValueError` for out-of-range stage numbers. `commit_hash` is accepted but not yet injected into prompts (reserved for future use).
+- Files changed: src/threatsmith/prompts/assembler.py (new), tests/test_assembler.py (new), tasks/stories.json
+- **Learnings for future iterations:**
+  - Stages 6, 7, 8 have hardcoded `threatmodel/` in STAGE_PROMPT constants instead of `{output_dir}` placeholders — the `output_dir` parameter exists in `build_prompt()` but replaces a placeholder that isn't present in those templates (no-op replacement). Stage 1–5 fully support custom `output_dir`.
+  - scanner_info dict uses key `"available"` (not `"scanners_available"`) — matches the return from `detect_scanners()`; assembler maps it to the `scanners_available` field in `VulnerabilityContext`
+  - The `commit_hash` parameter is part of the assembler signature per PRD, but none of the current stage context dataclasses have a commit_hash field — it's accepted and silently ignored until a future story adds it to stage prompts or metadata injection
+  - Ruff auto-fixed the import style from individual `from X import Y` lines to a grouped `from X import (...)` block
+---
+
 ## 2026-03-14 - Dynamic output directory parameter
 
 - What was implemented: All 8 stage prompt modules (stage_01 through stage_08) now accept `output_dir: str = "threatmodel"` as an optional parameter in `build_prompt()`. STAGE_PROMPT constants updated to use `{output_dir}` placeholder instead of hardcoded `threatmodel/` in OUTPUT REQUIREMENTS sections. All `build_prompt()` functions normalize the output directory via `output_dir.rstrip("/") + "/"` to handle both `"threatmodel"` and `"threatmodel/"` input formats cleanly.
