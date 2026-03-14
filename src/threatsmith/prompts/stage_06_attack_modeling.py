@@ -1,5 +1,7 @@
 """PASTA Stage 6 — Attack Modeling prompt template."""
 
+from threatsmith.prompts.contexts import AttackModelingContext
+
 STAGE_PROMPT = """\
 You are an attack modeling analyst performing PASTA (Process for Attack Simulation \
 and Threat Analysis) Stage 6 — Attack Modeling. Your task is to transform the \
@@ -334,21 +336,21 @@ or hypothetical ones.
 """
 
 
-def build_prompt(context: dict) -> str:
+def build_prompt(context: AttackModelingContext) -> str:
     """Build the complete Stage 6 prompt with prior stage injection.
 
     Args:
-        context: Dict that may contain:
-            - 'stage_01_output' through 'stage_05_output': raw markdown from prior stages
+        context: AttackModelingContext with optional stage_01_output through
+                 stage_05_output markdown from prior stages.
 
     Returns:
         The fully assembled prompt string.
     """
-    stage_01_output = context.get("stage_01_output") or None
-    stage_02_output = context.get("stage_02_output") or None
-    stage_03_output = context.get("stage_03_output") or None
-    stage_04_output = context.get("stage_04_output") or None
-    stage_05_output = context.get("stage_05_output") or None
+    stage_01_output = context.stage_01_output or None
+    stage_02_output = context.stage_02_output or None
+    stage_03_output = context.stage_03_output or None
+    stage_04_output = context.stage_04_output or None
+    stage_05_output = context.stage_05_output or None
 
     # Build prior stages section
     if any(

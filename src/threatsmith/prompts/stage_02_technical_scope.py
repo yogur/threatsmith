@@ -1,5 +1,7 @@
 """PASTA Stage 2 — Define Technical Scope prompt template."""
 
+from threatsmith.prompts.contexts import TechnicalScopeContext
+
 STAGE_PROMPT = """\
 You are a threat modeling analyst performing PASTA (Process for Attack Simulation \
 and Threat Analysis) Stage 2 — Define Technical Scope. Your task is to establish \
@@ -217,17 +219,17 @@ in Stage 5 must fall within the boundaries you establish here.
 """
 
 
-def build_prompt(context: dict) -> str:
+def build_prompt(context: TechnicalScopeContext) -> str:
     """Build the complete Stage 2 prompt with optional Stage 1 output injection.
 
     Args:
-        context: Dict that may contain 'stage_01_output' with the raw markdown
-                 output from Stage 1 (Define Objectives).
+        context: TechnicalScopeContext with optional stage_01_output markdown
+                 from Stage 1 (Define Objectives).
 
     Returns:
         The fully assembled prompt string.
     """
-    stage_01_output = context.get("stage_01_output") or None
+    stage_01_output = context.stage_01_output or None
 
     if stage_01_output:
         prior_stages_section = (

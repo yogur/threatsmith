@@ -1,5 +1,7 @@
 """PASTA Stage 1 — Define Objectives prompt template."""
 
+from threatsmith.prompts.contexts import ObjectivesContext
+
 STAGE_PROMPT = """\
 You are a threat modeling analyst performing PASTA (Process for Attack Simulation \
 and Threat Analysis) Stage 1 — Define Objectives. Your analysis forms the \
@@ -163,18 +165,18 @@ business lens you establish here.
 """
 
 
-def build_prompt(context: dict) -> str:
+def build_prompt(context: ObjectivesContext) -> str:
     """Build the complete Stage 1 prompt with optional user-supplied objectives.
 
     Args:
-        context: Dict that may contain 'business_objectives' and/or
-                 'security_objectives' strings from the user.
+        context: ObjectivesContext with optional business_objectives and
+                 security_objectives strings from the user.
 
     Returns:
         The fully assembled prompt string.
     """
-    business_objectives = context.get("business_objectives") or None
-    security_objectives = context.get("security_objectives") or None
+    business_objectives = context.business_objectives or None
+    security_objectives = context.security_objectives or None
 
     if business_objectives or security_objectives:
         parts = ["## USER-SUPPLIED OBJECTIVES", ""]

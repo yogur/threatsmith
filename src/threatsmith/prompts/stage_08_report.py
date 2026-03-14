@@ -1,5 +1,7 @@
 """Stage 8 — Report Consolidation prompt template (post-pipeline step)."""
 
+from threatsmith.prompts.contexts import ReportContext
+
 STAGE_PROMPT = """\
 You are a technical report editor performing the final consolidation step of a \
 PASTA (Process for Attack Simulation and Threat Analysis) threat model. Your task \
@@ -132,23 +134,23 @@ collection of AI agent outputs
 """
 
 
-def build_prompt(context: dict) -> str:
+def build_prompt(context: ReportContext) -> str:
     """Build the complete Stage 8 prompt with prior stage injection.
 
     Args:
-        context: Dict that may contain:
-            - 'stage_01_output' through 'stage_07_output': raw markdown from prior stages
+        context: ReportContext with optional stage_01_output through
+                 stage_07_output markdown from prior stages.
 
     Returns:
         The fully assembled prompt string.
     """
-    stage_01_output = context.get("stage_01_output") or None
-    stage_02_output = context.get("stage_02_output") or None
-    stage_03_output = context.get("stage_03_output") or None
-    stage_04_output = context.get("stage_04_output") or None
-    stage_05_output = context.get("stage_05_output") or None
-    stage_06_output = context.get("stage_06_output") or None
-    stage_07_output = context.get("stage_07_output") or None
+    stage_01_output = context.stage_01_output or None
+    stage_02_output = context.stage_02_output or None
+    stage_03_output = context.stage_03_output or None
+    stage_04_output = context.stage_04_output or None
+    stage_05_output = context.stage_05_output or None
+    stage_06_output = context.stage_06_output or None
+    stage_07_output = context.stage_07_output or None
 
     # Build prior stages section
     if any(

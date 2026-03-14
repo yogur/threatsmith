@@ -1,3 +1,12 @@
+## 2026-03-14 - Typed context dataclasses
+- What was implemented: `src/threatsmith/prompts/contexts.py` with 8 typed dataclasses — ObjectivesContext, TechnicalScopeContext, DecompositionContext, ThreatAnalysisContext, VulnerabilityContext, AttackModelingContext, RiskImpactContext, ReportContext. All `build_prompt(context: dict)` signatures across stages 1–8 updated to accept the appropriate dataclass. All 8 test files updated to construct dataclass instances instead of passing raw dicts.
+- Files changed: src/threatsmith/prompts/contexts.py (new), stage_01 through stage_08 prompt modules (signature + attribute access), tests/test_stage_01 through test_stage_08
+- **Learnings for future iterations:**
+  - All context fields are `str | None = None`; `scanners_available` in VulnerabilityContext is `list[str] | None = None` — the `or []` / `or None` guards in build_prompt handle None at runtime
+  - dataclass fields use plain `= None` defaults (no `field(default_factory=...)`) since all are scalar or nullable
+  - The `or None` access pattern (`context.field or None`) preserves existing empty-string-as-absent semantics from the dict era
+---
+
 ## Codebase Patterns
 - Do not write tests for string constants — test behavior and logic only
 - Package is under src/threatsmith with hatchling build backend

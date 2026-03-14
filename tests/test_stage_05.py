@@ -1,45 +1,54 @@
 """Tests for Stage 5 — Vulnerability and Weakness Analysis prompt template."""
 
+from threatsmith.prompts.contexts import VulnerabilityContext
 from threatsmith.prompts.stage_05_vulnerability import STAGE_PROMPT, build_prompt
 
 
 class TestBuildPrompt:
     def test_returns_string(self):
-        result = build_prompt({})
+        result = build_prompt(VulnerabilityContext())
         assert isinstance(result, str)
 
     def test_with_stage_01_output(self):
         result = build_prompt(
-            {"stage_01_output": "Business objectives and data sensitivity findings."}
+            VulnerabilityContext(
+                stage_01_output="Business objectives and data sensitivity findings."
+            )
         )
         assert "Business objectives and data sensitivity findings." in result
 
     def test_with_stage_02_output(self):
         result = build_prompt(
-            {"stage_02_output": "Technology stack and dependency analysis."}
+            VulnerabilityContext(
+                stage_02_output="Technology stack and dependency analysis."
+            )
         )
         assert "Technology stack and dependency analysis." in result
 
     def test_with_stage_03_output(self):
         result = build_prompt(
-            {"stage_03_output": "Application decomposition and entry points."}
+            VulnerabilityContext(
+                stage_03_output="Application decomposition and entry points."
+            )
         )
         assert "Application decomposition and entry points." in result
 
     def test_with_stage_04_output(self):
         result = build_prompt(
-            {"stage_04_output": "Threat inventory with STRIDE and attack scenarios."}
+            VulnerabilityContext(
+                stage_04_output="Threat inventory with STRIDE and attack scenarios."
+            )
         )
         assert "Threat inventory with STRIDE and attack scenarios." in result
 
     def test_with_all_prior_stages(self):
         result = build_prompt(
-            {
-                "stage_01_output": "Stage 1 content",
-                "stage_02_output": "Stage 2 content",
-                "stage_03_output": "Stage 3 content",
-                "stage_04_output": "Stage 4 content",
-            }
+            VulnerabilityContext(
+                stage_01_output="Stage 1 content",
+                stage_02_output="Stage 2 content",
+                stage_03_output="Stage 3 content",
+                stage_04_output="Stage 4 content",
+            )
         )
         assert "Stage 1 content" in result
         assert "Stage 2 content" in result
@@ -48,12 +57,12 @@ class TestBuildPrompt:
 
     def test_stage_outputs_wrapped_in_xml(self):
         result = build_prompt(
-            {
-                "stage_01_output": "S1 findings",
-                "stage_02_output": "S2 findings",
-                "stage_03_output": "S3 findings",
-                "stage_04_output": "S4 findings",
-            }
+            VulnerabilityContext(
+                stage_01_output="S1 findings",
+                stage_02_output="S2 findings",
+                stage_03_output="S3 findings",
+                stage_04_output="S4 findings",
+            )
         )
         assert "<prior_stages>" in result
         assert "<stage_01_objectives>" in result
@@ -67,63 +76,65 @@ class TestBuildPrompt:
         assert "</prior_stages>" in result
 
     def test_empty_context_omits_prior_stages(self):
-        result = build_prompt({})
+        result = build_prompt(VulnerabilityContext())
         assert "<prior_stages>" not in result
         assert "PRIOR STAGE FINDINGS" not in result
 
     def test_none_values_treated_as_absent(self):
         result = build_prompt(
-            {
-                "stage_01_output": None,
-                "stage_02_output": None,
-                "stage_03_output": None,
-                "stage_04_output": None,
-            }
+            VulnerabilityContext(
+                stage_01_output=None,
+                stage_02_output=None,
+                stage_03_output=None,
+                stage_04_output=None,
+            )
         )
         assert "<prior_stages>" not in result
         assert "PRIOR STAGE FINDINGS" not in result
 
     def test_empty_strings_treated_as_absent(self):
         result = build_prompt(
-            {
-                "stage_01_output": "",
-                "stage_02_output": "",
-                "stage_03_output": "",
-                "stage_04_output": "",
-            }
+            VulnerabilityContext(
+                stage_01_output="",
+                stage_02_output="",
+                stage_03_output="",
+                stage_04_output="",
+            )
         )
         assert "<prior_stages>" not in result
         assert "PRIOR STAGE FINDINGS" not in result
 
     def test_references_output_file(self):
-        result = build_prompt({})
+        result = build_prompt(VulnerabilityContext())
         assert "threatmodel/05-vulnerability-analysis.md" in result
 
     def test_no_raw_placeholders_in_output(self):
-        result = build_prompt({})
+        result = build_prompt(VulnerabilityContext())
         assert "{prior_stages_section}" not in result
         assert "{scanner_section}" not in result
 
     def test_prior_stages_includes_instructional_context(self):
-        result = build_prompt({"stage_01_output": "Some findings"})
+        result = build_prompt(VulnerabilityContext(stage_01_output="Some findings"))
         assert "PRIOR STAGE FINDINGS" in result
 
     def test_partial_prior_stages_only_stage_01(self):
-        result = build_prompt({"stage_01_output": "S1 only"})
+        result = build_prompt(VulnerabilityContext(stage_01_output="S1 only"))
         assert "<stage_01_objectives>" in result
         assert "<stage_02_technical_scope>" not in result
         assert "<stage_03_decomposition>" not in result
         assert "<stage_04_threat_analysis>" not in result
 
     def test_partial_prior_stages_only_stage_04(self):
-        result = build_prompt({"stage_04_output": "S4 only"})
+        result = build_prompt(VulnerabilityContext(stage_04_output="S4 only"))
         assert "<stage_01_objectives>" not in result
         assert "<stage_02_technical_scope>" not in result
         assert "<stage_03_decomposition>" not in result
         assert "<stage_04_threat_analysis>" in result
 
     def test_partial_prior_stages_missing_middle(self):
-        result = build_prompt({"stage_01_output": "S1", "stage_04_output": "S4"})
+        result = build_prompt(
+            VulnerabilityContext(stage_01_output="S1", stage_04_output="S4")
+        )
         assert "<stage_01_objectives>" in result
         assert "<stage_02_technical_scope>" not in result
         assert "<stage_03_decomposition>" not in result
@@ -132,64 +143,70 @@ class TestBuildPrompt:
     # --- Scanner snippet injection tests ---
 
     def test_semgrep_snippet_included_when_available(self):
-        result = build_prompt({"scanners_available": ["semgrep"]})
+        result = build_prompt(VulnerabilityContext(scanners_available=["semgrep"]))
         assert "Semgrep" in result
         assert "semgrep scan" in result
 
     def test_trivy_snippet_included_when_available(self):
-        result = build_prompt({"scanners_available": ["trivy"]})
+        result = build_prompt(VulnerabilityContext(scanners_available=["trivy"]))
         assert "Trivy" in result
         assert "trivy fs" in result
 
     def test_gitleaks_snippet_included_when_available(self):
-        result = build_prompt({"scanners_available": ["gitleaks"]})
+        result = build_prompt(VulnerabilityContext(scanners_available=["gitleaks"]))
         assert "Gitleaks" in result
         assert "gitleaks dir" in result
 
     def test_all_scanners_included_when_all_available(self):
-        result = build_prompt({"scanners_available": ["semgrep", "trivy", "gitleaks"]})
+        result = build_prompt(
+            VulnerabilityContext(scanners_available=["semgrep", "trivy", "gitleaks"])
+        )
         assert "semgrep scan" in result
         assert "trivy fs" in result
         assert "gitleaks dir" in result
 
     def test_scanner_section_header_when_scanners_available(self):
-        result = build_prompt({"scanners_available": ["semgrep"]})
+        result = build_prompt(VulnerabilityContext(scanners_available=["semgrep"]))
         assert "## SCANNER INSTRUCTIONS" in result
 
     def test_no_scanner_section_when_no_scanners(self):
-        result = build_prompt({})
+        result = build_prompt(VulnerabilityContext())
         assert "## SCANNER INSTRUCTIONS" not in result
 
     def test_no_scanner_section_when_empty_list(self):
-        result = build_prompt({"scanners_available": []})
+        result = build_prompt(VulnerabilityContext(scanners_available=[]))
         assert "## SCANNER INSTRUCTIONS" not in result
 
     def test_no_scanner_section_when_none(self):
-        result = build_prompt({"scanners_available": None})
+        result = build_prompt(VulnerabilityContext(scanners_available=None))
         assert "## SCANNER INSTRUCTIONS" not in result
 
     def test_only_available_scanners_included(self):
-        result = build_prompt({"scanners_available": ["trivy"]})
+        result = build_prompt(VulnerabilityContext(scanners_available=["trivy"]))
         assert "trivy fs" in result
         assert "semgrep scan" not in result
         assert "gitleaks dir" not in result
 
     def test_unknown_scanner_name_ignored(self):
-        result = build_prompt({"scanners_available": ["unknown_scanner"]})
+        result = build_prompt(
+            VulnerabilityContext(scanners_available=["unknown_scanner"])
+        )
         assert "SCANNER INSTRUCTIONS" in result
         assert "unknown_scanner" not in result
 
     def test_mixed_known_and_unknown_scanners(self):
-        result = build_prompt({"scanners_available": ["semgrep", "unknown_scanner"]})
+        result = build_prompt(
+            VulnerabilityContext(scanners_available=["semgrep", "unknown_scanner"])
+        )
         assert "semgrep scan" in result
         assert "unknown_scanner" not in result
 
     def test_scanner_and_prior_stages_combined(self):
         result = build_prompt(
-            {
-                "stage_04_output": "Stage 4 threats",
-                "scanners_available": ["semgrep", "trivy"],
-            }
+            VulnerabilityContext(
+                stage_04_output="Stage 4 threats",
+                scanners_available=["semgrep", "trivy"],
+            )
         )
         assert "<stage_04_threat_analysis>" in result
         assert "SCANNER INSTRUCTIONS" in result
@@ -198,7 +215,9 @@ class TestBuildPrompt:
 
     def test_scanner_snippet_includes_usage_example(self):
         """Scanner snippets should contain example commands users can run."""
-        result = build_prompt({"scanners_available": ["semgrep", "trivy", "gitleaks"]})
+        result = build_prompt(
+            VulnerabilityContext(scanners_available=["semgrep", "trivy", "gitleaks"])
+        )
         # Each snippet contains an example command
         assert "--config auto" in result  # semgrep
         assert "--format json" in result  # trivy

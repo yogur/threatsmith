@@ -1,5 +1,6 @@
 """PASTA Stage 4 — Threat Analysis prompt template."""
 
+from threatsmith.prompts.contexts import ThreatAnalysisContext
 from threatsmith.prompts.owasp_references import (
     OWASP_API_TOP_10,
     OWASP_LLM_TOP_10,
@@ -288,20 +289,19 @@ _MOBILE_KEYWORDS = [
 ]
 
 
-def build_prompt(context: dict) -> str:
+def build_prompt(context: ThreatAnalysisContext) -> str:
     """Build the complete Stage 4 prompt with prior stage injection and OWASP references.
 
     Args:
-        context: Dict that may contain 'stage_01_output', 'stage_02_output',
-                 and/or 'stage_03_output' with the raw markdown outputs from
-                 prior stages.
+        context: ThreatAnalysisContext with optional stage_01_output through
+                 stage_03_output markdown from prior stages.
 
     Returns:
         The fully assembled prompt string.
     """
-    stage_01_output = context.get("stage_01_output") or None
-    stage_02_output = context.get("stage_02_output") or None
-    stage_03_output = context.get("stage_03_output") or None
+    stage_01_output = context.stage_01_output or None
+    stage_02_output = context.stage_02_output or None
+    stage_03_output = context.stage_03_output or None
 
     # Build prior stages section
     if stage_01_output or stage_02_output or stage_03_output:

@@ -1,5 +1,7 @@
 """PASTA Stage 3 — Application Decomposition prompt template."""
 
+from threatsmith.prompts.contexts import DecompositionContext
+
 STAGE_PROMPT = """\
 You are a threat modeling analyst performing PASTA (Process for Attack Simulation \
 and Threat Analysis) Stage 3 — Application Decomposition. Your task is to decompose \
@@ -248,18 +250,18 @@ model attacks along every path you trace. What you miss here, they miss entirely
 """
 
 
-def build_prompt(context: dict) -> str:
+def build_prompt(context: DecompositionContext) -> str:
     """Build the complete Stage 3 prompt with optional Stages 1-2 output injection.
 
     Args:
-        context: Dict that may contain 'stage_01_output' and/or 'stage_02_output'
-                 with the raw markdown outputs from prior stages.
+        context: DecompositionContext with optional stage_01_output and
+                 stage_02_output markdown from prior stages.
 
     Returns:
         The fully assembled prompt string.
     """
-    stage_01_output = context.get("stage_01_output") or None
-    stage_02_output = context.get("stage_02_output") or None
+    stage_01_output = context.stage_01_output or None
+    stage_02_output = context.stage_02_output or None
 
     if stage_01_output or stage_02_output:
         parts = [
