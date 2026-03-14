@@ -148,3 +148,15 @@
   - The PRD clearly distinguishes Stage 7 (analytical — risk qualification, countermeasures, residual risk) from Stage 8 (report consolidation — no new analysis). Stage 7 is the last analytical stage.
   - 34 tests: 21 for build_prompt behavior (all six prior stages, XML wrapping, partial stages, empty/None handling, output file reference, placeholder removal, instructional context) + 13 structural checks on STAGE_PROMPT
 ---
+
+## 2026-03-14 - US-014
+- What was implemented: Stage 8 prompt template in src/threatsmith/prompts/stage_08_report.py with STAGE_PROMPT constant and build_prompt(context) function. STAGE_PROMPT is a report consolidation template (NOT a PASTA stage) covering: Executive Summary (scope, critical findings count, top risks, key recommendations, overall risk posture), Stage Content Consolidation (all 7 stages in order with standardized ## Stage N: Title headings), Content Preservation Rules (Mermaid diagrams verbatim, CVSS scores/vectors, CWE/CVE/MITRE ATT&CK IDs, code locations and file references, tables and structured data, all countermeasures and remediation items), Content Cleanup Rules (conversational artifact removal, investigation process note removal, heading level normalization, cross-reference deduplication, formatting consistency). build_prompt() injects Stages 1-7 outputs via XML-delimited format with selective inclusion (only present stages are wrapped). Instructional context section header is "PRIOR STAGE OUTPUTS" (distinct from analytical stages' "PRIOR STAGE FINDINGS") to reinforce the consolidation-only role.
+- Files changed: src/threatsmith/prompts/stage_08_report.py (new), tests/test_stage_08.py (new), tasks/stories.json, tasks/progress.txt
+- **Learnings for future iterations:**
+  - Stage 8 is explicitly NOT a PASTA stage — it is a post-pipeline deliverable generation step. The prompt reinforces "no new analysis" as a critical requirement.
+  - Stage 8 has no dynamic injection beyond prior stages — no scanner snippets, no OWASP references. Like Stages 6 and 7, it only uses the `{prior_stages_section}` placeholder.
+  - Stage 8 build_prompt handles seven prior stage outputs (stage_01_output through stage_07_output) — each independently optional
+  - The instructional context uses "PRIOR STAGE OUTPUTS" instead of "PRIOR STAGE FINDINGS" to semantically distinguish the consolidation step from analytical stages
+  - Stage 8 XML tag for Stage 7 is `<stage_07_risk_impact>` following the established naming convention (module name suffix)
+  - 34 tests: 21 for build_prompt behavior (all seven prior stages, XML wrapping, partial stages, empty/None handling, output file reference, placeholder removal, instructional context, no-new-analysis constraint, consolidation role) + 13 structural checks on STAGE_PROMPT
+---
