@@ -1,3 +1,14 @@
+## 2026-03-14 - US-018
+- What was implemented: End-to-end integration tests in tests/test_e2e.py. 4 tests covering: (1) full pipeline creates all 8 deliverable .md files, (2) metadata.json created with all required fields, (3) context accumulates correctly so stage N prompt contains outputs from stages 1..N-1, (4) missing output file triggers retry then abort with exit code 1.
+- Files changed: tests/test_e2e.py (new), tasks/stories.json, tasks/progress.txt
+- **Learnings for future iterations:**
+  - metadata.json stores engine as key `engine` (not `engine_name`) — generate_metadata() takes `engine_name` param but writes `"engine": engine_name` in the dict
+  - E2E mock engine pattern: use a closure over `output_dir` in `execute_side_effect(prompt, working_directory)` — `working_directory` is `repo_path`, so `out_path = os.path.join(working_directory, output_dir, filename)` correctly reconstructs the output path
+  - Track call count with a mutable dict `{"n": 0}` in the closure to derive stage index from call number
+  - Patch `threatsmith.main.get_engine` (not `threatsmith.engines.get_engine`) when testing via CLI — the CLI imports get_engine into its own module namespace
+  - Real `detect_scanners()` and `generate_metadata()` can be used in E2E tests without mocking — scanners uses shutil.which() (safe), metadata falls back to 'unknown' for git failures
+---
+
 ## 2026-03-14 - US-017
 - What was implemented: CLI interface in src/threatsmith/main.py using Typer. Positional `path` argument, `--engine` (default `claude-code`), `--business-objectives`, `--security-objectives`, `--output-dir` (default `threatmodel/`), `-v/--verbose`. Creates output directory with `os.makedirs(exist_ok=True)`, calls `detect_scanners()`, `generate_metadata()`, `write_metadata()` before pipeline, then instantiates `Orchestrator` and runs it. `raise SystemExit(orchestrator.run())` propagates exit code. Entry point `threatsmith = "threatsmith.main:main"` added to `[project.scripts]` in pyproject.toml.
 - Files changed: src/threatsmith/main.py (new), tests/test_cli.py (new), pyproject.toml ([project.scripts] section added), tasks/stories.json
