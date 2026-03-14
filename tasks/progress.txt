@@ -1,3 +1,14 @@
+## 2026-03-14 - Dynamic output directory parameter
+
+- What was implemented: All 8 stage prompt modules (stage_01 through stage_08) now accept `output_dir: str = "threatmodel"` as an optional parameter in `build_prompt()`. STAGE_PROMPT constants updated to use `{output_dir}` placeholder instead of hardcoded `threatmodel/` in OUTPUT REQUIREMENTS sections. All `build_prompt()` functions normalize the output directory via `output_dir.rstrip("/") + "/"` to handle both `"threatmodel"` and `"threatmodel/"` input formats cleanly.
+- Files changed: src/threatsmith/prompts/stage_01 through stage_08 (build_prompt signature + prompt templates), tests/test_stage_02, test_stage_03, test_stage_04, test_stage_05 (assertion updates)
+- **Learnings for future iterations:**
+  - Keep runtime/system config (like output_dir) separate from analytical context to maintain proper separation of concerns
+  - Single normalization point (`rstrip("/") + "/"`) cleanly handles edge cases without branching logic in callers
+  - Update pattern: add parameter with default → normalize in function → inject via `.replace()` → chain with other replacements
+  - Test assertions for STAGE_PROMPT should check for placeholder `{output_dir}XX-name.md` rather than hardcoded paths
+---
+
 ## 2026-03-14 - Typed context dataclasses
 - What was implemented: `src/threatsmith/prompts/contexts.py` with 8 typed dataclasses — ObjectivesContext, TechnicalScopeContext, DecompositionContext, ThreatAnalysisContext, VulnerabilityContext, AttackModelingContext, RiskImpactContext, ReportContext. All `build_prompt(context: dict)` signatures across stages 1–8 updated to accept the appropriate dataclass. All 8 test files updated to construct dataclass instances instead of passing raw dicts.
 - Files changed: src/threatsmith/prompts/contexts.py (new), stage_01 through stage_08 prompt modules (signature + attribute access), tests/test_stage_01 through test_stage_08

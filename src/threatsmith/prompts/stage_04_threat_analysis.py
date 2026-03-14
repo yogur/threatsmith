@@ -229,8 +229,8 @@ Synthesize findings across all pillars:
 
 ## OUTPUT REQUIREMENTS
 
-Write your analysis to `threatmodel/04-threat-analysis.md`. Create the \
-`threatmodel/` directory if it does not already exist.
+Write your analysis to `{output_dir}04-threat-analysis.md`. Create the \
+`{output_dir}` directory if it does not already exist.
 
 Structure your output with the four pillar headings as top-level sections \
 (## STRIDE Threat Analysis, ## Probabilistic Attack Scenario Analysis, \
@@ -289,12 +289,16 @@ _MOBILE_KEYWORDS = [
 ]
 
 
-def build_prompt(context: ThreatAnalysisContext) -> str:
+def build_prompt(
+    context: ThreatAnalysisContext, output_dir: str = "threatmodel"
+) -> str:
     """Build the complete Stage 4 prompt with prior stage injection and OWASP references.
 
     Args:
         context: ThreatAnalysisContext with optional stage_01_output through
                  stage_03_output markdown from prior stages.
+        output_dir: Output directory for deliverables (defaults to "threatmodel").
+                   Accepts with or without trailing slash.
 
     Returns:
         The fully assembled prompt string.
@@ -302,6 +306,7 @@ def build_prompt(context: ThreatAnalysisContext) -> str:
     stage_01_output = context.stage_01_output or None
     stage_02_output = context.stage_02_output or None
     stage_03_output = context.stage_03_output or None
+    normalized_dir = output_dir.rstrip("/") + "/"
 
     # Build prior stages section
     if stage_01_output or stage_02_output or stage_03_output:
@@ -363,4 +368,4 @@ def build_prompt(context: ThreatAnalysisContext) -> str:
 
     prompt = STAGE_PROMPT.replace("{prior_stages_section}", prior_stages_section)
     prompt = prompt.replace("{owasp_section}", owasp_section)
-    return prompt
+    return prompt.replace("{output_dir}", normalized_dir)

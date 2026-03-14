@@ -211,8 +211,8 @@ and back to display
 
 ## OUTPUT REQUIREMENTS
 
-Write your analysis to `threatmodel/03-application-decomposition.md`. Create the \
-`threatmodel/` directory if it does not already exist.
+Write your analysis to `{output_dir}03-application-decomposition.md`. Create the \
+`{output_dir}` directory if it does not already exist.
 
 Structure your output with the five pillar headings as top-level sections \
 (## Use Case Identification, ## Actors Roles and Trust Levels, \
@@ -250,18 +250,21 @@ model attacks along every path you trace. What you miss here, they miss entirely
 """
 
 
-def build_prompt(context: DecompositionContext) -> str:
+def build_prompt(context: DecompositionContext, output_dir: str = "threatmodel") -> str:
     """Build the complete Stage 3 prompt with optional Stages 1-2 output injection.
 
     Args:
         context: DecompositionContext with optional stage_01_output and
                  stage_02_output markdown from prior stages.
+        output_dir: Output directory for deliverables (defaults to "threatmodel").
+                   Accepts with or without trailing slash.
 
     Returns:
         The fully assembled prompt string.
     """
     stage_01_output = context.stage_01_output or None
     stage_02_output = context.stage_02_output or None
+    normalized_dir = output_dir.rstrip("/") + "/"
 
     if stage_01_output or stage_02_output:
         parts = [
@@ -290,4 +293,5 @@ def build_prompt(context: DecompositionContext) -> str:
     else:
         prior_stages_section = ""
 
-    return STAGE_PROMPT.replace("{prior_stages_section}", prior_stages_section)
+    prompt = STAGE_PROMPT.replace("{prior_stages_section}", prior_stages_section)
+    return prompt.replace("{output_dir}", normalized_dir)

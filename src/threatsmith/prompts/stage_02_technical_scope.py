@@ -188,8 +188,8 @@ posture of the component accessing it
 
 ## OUTPUT REQUIREMENTS
 
-Write your analysis to `threatmodel/02-technical-scope.md`. Create the \
-`threatmodel/` directory if it does not already exist.
+Write your analysis to `{output_dir}02-technical-scope.md`. Create the \
+`{output_dir}` directory if it does not already exist.
 
 Structure your output with the six pillar headings as top-level sections \
 (## Project Boundary Definition, ## Technology Stack Mapping, \
@@ -219,17 +219,22 @@ in Stage 5 must fall within the boundaries you establish here.
 """
 
 
-def build_prompt(context: TechnicalScopeContext) -> str:
+def build_prompt(
+    context: TechnicalScopeContext, output_dir: str = "threatmodel"
+) -> str:
     """Build the complete Stage 2 prompt with optional Stage 1 output injection.
 
     Args:
         context: TechnicalScopeContext with optional stage_01_output markdown
                  from Stage 1 (Define Objectives).
+        output_dir: Output directory for deliverables (defaults to "threatmodel").
+                   Accepts with or without trailing slash.
 
     Returns:
         The fully assembled prompt string.
     """
     stage_01_output = context.stage_01_output or None
+    normalized_dir = output_dir.rstrip("/") + "/"
 
     if stage_01_output:
         prior_stages_section = (
@@ -249,4 +254,5 @@ def build_prompt(context: TechnicalScopeContext) -> str:
     else:
         prior_stages_section = ""
 
-    return STAGE_PROMPT.replace("{prior_stages_section}", prior_stages_section)
+    prompt = STAGE_PROMPT.replace("{prior_stages_section}", prior_stages_section)
+    return prompt.replace("{output_dir}", normalized_dir)

@@ -101,7 +101,7 @@ class TestStagePrompt:
         assert "{prior_stages_section}" in STAGE_PROMPT
 
     def test_references_output_file(self):
-        assert "threatmodel/03-application-decomposition.md" in STAGE_PROMPT
+        assert "{output_dir}03-application-decomposition.md" in STAGE_PROMPT
 
     def test_contains_mermaid_guidance(self):
         assert "mermaid" in STAGE_PROMPT.lower()

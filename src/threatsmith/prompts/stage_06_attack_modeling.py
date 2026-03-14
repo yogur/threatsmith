@@ -336,12 +336,16 @@ or hypothetical ones.
 """
 
 
-def build_prompt(context: AttackModelingContext) -> str:
+def build_prompt(
+    context: AttackModelingContext, output_dir: str = "threatmodel"
+) -> str:
     """Build the complete Stage 6 prompt with prior stage injection.
 
     Args:
         context: AttackModelingContext with optional stage_01_output through
                  stage_05_output markdown from prior stages.
+        output_dir: Output directory for deliverables (defaults to "threatmodel").
+                   Accepts with or without trailing slash.
 
     Returns:
         The fully assembled prompt string.
@@ -351,6 +355,7 @@ def build_prompt(context: AttackModelingContext) -> str:
     stage_03_output = context.stage_03_output or None
     stage_04_output = context.stage_04_output or None
     stage_05_output = context.stage_05_output or None
+    normalized_dir = output_dir.rstrip("/") + "/"
 
     # Build prior stages section
     if any(
@@ -408,4 +413,4 @@ def build_prompt(context: AttackModelingContext) -> str:
         prior_stages_section = ""
 
     prompt = STAGE_PROMPT.replace("{prior_stages_section}", prior_stages_section)
-    return prompt
+    return prompt.replace("{output_dir}", normalized_dir)

@@ -331,7 +331,7 @@ class TestStagePrompt:
         assert "{owasp_section}" in STAGE_PROMPT
 
     def test_references_output_file(self):
-        assert "threatmodel/04-threat-analysis.md" in STAGE_PROMPT
+        assert "{output_dir}04-threat-analysis.md" in STAGE_PROMPT
 
     def test_contains_stride_framework(self):
         assert "Spoofing" in STAGE_PROMPT

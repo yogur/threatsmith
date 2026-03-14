@@ -137,7 +137,7 @@ third-party services)
 
 ## OUTPUT REQUIREMENTS
 
-Write your analysis to `threatmodel/01-objectives.md`. Create the `threatmodel/` \
+Write your analysis to `{output_dir}01-objectives.md`. Create the `{output_dir}` \
 directory if it does not already exist.
 
 Structure your output with the four pillar headings as top-level sections \
@@ -165,18 +165,21 @@ business lens you establish here.
 """
 
 
-def build_prompt(context: ObjectivesContext) -> str:
+def build_prompt(context: ObjectivesContext, output_dir: str = "threatmodel") -> str:
     """Build the complete Stage 1 prompt with optional user-supplied objectives.
 
     Args:
         context: ObjectivesContext with optional business_objectives and
                  security_objectives strings from the user.
+        output_dir: Output directory for deliverables (defaults to "threatmodel").
+                   Accepts with or without trailing slash.
 
     Returns:
         The fully assembled prompt string.
     """
     business_objectives = context.business_objectives or None
     security_objectives = context.security_objectives or None
+    normalized_dir = output_dir.rstrip("/") + "/"
 
     if business_objectives or security_objectives:
         parts = ["## USER-SUPPLIED OBJECTIVES", ""]
@@ -200,4 +203,5 @@ def build_prompt(context: ObjectivesContext) -> str:
     else:
         user_objectives_section = ""
 
-    return STAGE_PROMPT.replace("{user_objectives_section}", user_objectives_section)
+    prompt = STAGE_PROMPT.replace("{user_objectives_section}", user_objectives_section)
+    return prompt.replace("{output_dir}", normalized_dir)

@@ -64,4 +64,4 @@ class TestStagePrompt:
         assert "{prior_stages_section}" in STAGE_PROMPT
 
     def test_references_output_file(self):
-        assert "threatmodel/02-technical-scope.md" in STAGE_PROMPT
+        assert "{output_dir}02-technical-scope.md" in STAGE_PROMPT

@@ -234,7 +234,7 @@ class TestStagePrompt:
         assert "{scanner_section}" in STAGE_PROMPT
 
     def test_references_output_file(self):
-        assert "threatmodel/05-vulnerability-analysis.md" in STAGE_PROMPT
+        assert "{output_dir}05-vulnerability-analysis.md" in STAGE_PROMPT
 
     def test_contains_cvss_scoring(self):
         assert "CVSS 3.1" in STAGE_PROMPT
