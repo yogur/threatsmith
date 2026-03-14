@@ -282,8 +282,8 @@
         "Tests pass"
       ],
       "priority": 17,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Implemented Typer CLI in src/threatsmith/main.py. Positional path argument, --engine (default claude-code), --business-objectives, --security-objectives, --output-dir (default threatmodel/), -v/--verbose. Creates output dir with os.makedirs, calls detect_scanners(), generate_metadata(), write_metadata() before pipeline, then runs Orchestrator. Entry point added to pyproject.toml [project.scripts]. 9 tests in tests/test_cli.py covering all acceptance criteria."
     },
     {
       "id": "US-018",

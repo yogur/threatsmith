@@ -1,3 +1,14 @@
+## 2026-03-14 - US-017
+- What was implemented: CLI interface in src/threatsmith/main.py using Typer. Positional `path` argument, `--engine` (default `claude-code`), `--business-objectives`, `--security-objectives`, `--output-dir` (default `threatmodel/`), `-v/--verbose`. Creates output directory with `os.makedirs(exist_ok=True)`, calls `detect_scanners()`, `generate_metadata()`, `write_metadata()` before pipeline, then instantiates `Orchestrator` and runs it. `raise SystemExit(orchestrator.run())` propagates exit code. Entry point `threatsmith = "threatsmith.main:main"` added to `[project.scripts]` in pyproject.toml.
+- Files changed: src/threatsmith/main.py (new), tests/test_cli.py (new), pyproject.toml ([project.scripts] section added), tasks/stories.json
+- **Learnings for future iterations:**
+  - `typer.testing.CliRunner` is the right way to test Typer CLIs — use `runner.invoke(app, [...])` and check `result.exit_code` and `result.output`
+  - `raise SystemExit(code)` propagates exit codes through Typer; `sys.exit()` also works but `raise SystemExit` is more explicit
+  - Output dir should be resolved as `os.path.join(repo_path, output_dir)` — relative to the target repo, not CWD
+  - Orchestrator receives `output_dir` as a relative string (not the absolute path); it joins with `repo_path` internally
+  - `typer` is already a declared dependency in pyproject.toml
+---
+
 ## Codebase Patterns
 - Orchestrator is a dataclass in src/threatsmith/orchestrator.py; stage→filename mapping in _STAGE_FILES dict at module level
 - Do not write tests for string constants — test behavior and logic only

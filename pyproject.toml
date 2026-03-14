@@ -36,6 +36,9 @@ target-version = "py312"
 select = ["E", "F", "I", "UP"]
 ignore = ["E501"]
 
+[project.scripts]
+threatsmith = "threatsmith.main:app"
+
 [project.urls]
 Homepage = "https://github.com/yogur/threatsmith"
 Repository = "https://github.com/yogur/threatsmith"
