@@ -15,5 +15,14 @@ class ClaudeCodeEngine(Engine):
         """Invoke claude CLI in non-interactive prompt mode and return its exit code."""
         cmd = ["claude", "-p", prompt]
         logger.debug("Running: claude -p <prompt> in %s", working_directory)
-        result = subprocess.run(cmd, cwd=working_directory)
-        return result.returncode
+        try:
+            result = subprocess.run(cmd, cwd=working_directory)
+            return result.returncode
+        except FileNotFoundError:
+            logger.error(
+                "Claude CLI not found. Ensure 'claude' is installed and in your PATH."
+            )
+            return 1
+        except Exception as e:
+            logger.error("Error executing claude: %s", str(e))
+            return 1

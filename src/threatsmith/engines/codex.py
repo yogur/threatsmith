@@ -15,5 +15,14 @@ class CodexEngine(Engine):
         """Invoke codex CLI in non-interactive exec mode and return its exit code."""
         cmd = ["codex", "exec", prompt]
         logger.debug("Running: codex exec <prompt> in %s", working_directory)
-        result = subprocess.run(cmd, cwd=working_directory)
-        return result.returncode
+        try:
+            result = subprocess.run(cmd, cwd=working_directory)
+            return result.returncode
+        except FileNotFoundError:
+            logger.error(
+                "Codex CLI not found. Ensure 'codex' is installed and in your PATH."
+            )
+            return 1
+        except Exception as e:
+            logger.error("Error executing codex: %s", str(e))
+            return 1
