@@ -92,6 +92,6 @@ def write_metadata(output_dir: str, metadata: ThreatSmithMetadata) -> None:
         metadata: ThreatSmithMetadata instance from generate_metadata()
     """
     output_path = Path(output_dir) / "metadata.json"
-    logger.debug("[ThreatSmith] Writing metadata to: %s", output_path)
+    logger.debug("Writing metadata to: %s", output_path)
     with open(output_path, "w") as f:
         json.dump(metadata.to_dict(), f, indent=2)

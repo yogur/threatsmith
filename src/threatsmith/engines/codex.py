@@ -14,8 +14,6 @@ class CodexEngine(Engine):
     ) -> int:
         """Invoke codex CLI in non-interactive exec mode and return its exit code."""
         cmd = ["codex", "exec", prompt]
-        logger.debug(
-            "[ThreatSmith] Running: codex exec <prompt> in %s", working_directory
-        )
+        logger.debug("Running: codex exec <prompt> in %s", working_directory)
         result = subprocess.run(cmd, cwd=working_directory)
         return result.returncode

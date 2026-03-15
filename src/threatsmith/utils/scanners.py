@@ -18,10 +18,10 @@ def detect_scanners() -> dict[str, list[str]]:
     for scanner in scanners:
         if shutil.which(scanner):
             available.append(scanner)
-            logger.debug("[ThreatSmith] Scanner check: %s — available", scanner)
+            logger.debug("Scanner check: %s — available", scanner)
         else:
             unavailable.append(scanner)
-            logger.debug("[ThreatSmith] Scanner check: %s — not found", scanner)
+            logger.debug("Scanner check: %s — not found", scanner)
 
     return {
         "available": available,

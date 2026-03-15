@@ -50,11 +50,9 @@ class Orchestrator:
 
         for attempt in range(1, 3):  # attempts 1 and 2
             if attempt == 1:
-                logger.info("[ThreatSmith] Stage %d — starting", stage_number)
+                logger.info("Stage %d — starting", stage_number)
             else:
-                logger.info(
-                    "[ThreatSmith] Stage %d — retrying (attempt 2/2)", stage_number
-                )
+                logger.info("Stage %d — retrying (attempt 2/2)", stage_number)
 
             prompt = assemble_prompt(
                 stage_number=stage_number,
@@ -70,13 +68,13 @@ class Orchestrator:
             if exit_code != 0:
                 if attempt == 1:
                     logger.warning(
-                        "[ThreatSmith] Stage %d: engine returned exit code %d — retrying",
+                        "Stage %d: engine returned exit code %d — retrying",
                         stage_number,
                         exit_code,
                     )
                     continue
                 logger.error(
-                    "[ThreatSmith] Stage %d: engine returned exit code %d — aborting",
+                    "Stage %d: engine returned exit code %d — aborting",
                     stage_number,
                     exit_code,
                 )
@@ -85,12 +83,12 @@ class Orchestrator:
             if not os.path.isfile(output_path):
                 if attempt == 1:
                     logger.warning(
-                        "[ThreatSmith] Stage %d: output file not found — retrying",
+                        "Stage %d: output file not found — retrying",
                         stage_number,
                     )
                     continue
                 logger.error(
-                    "[ThreatSmith] Stage %d: output file not found — aborting",
+                    "Stage %d: output file not found — aborting",
                     stage_number,
                 )
                 return False
@@ -100,9 +98,9 @@ class Orchestrator:
                 content = fh.read()
             self._prior_outputs[output_key] = content
 
-            logger.info("[ThreatSmith] Stage %d — complete", stage_number)
+            logger.info("Stage %d — complete", stage_number)
             logger.debug(
-                "[ThreatSmith] Stage %d: accumulated context %d chars",
+                "Stage %d: accumulated context %d chars",
                 stage_number,
                 sum(len(v) for v in self._prior_outputs.values()),
             )
@@ -120,10 +118,10 @@ class Orchestrator:
             success = self._run_stage(stage_number)
             if not success:
                 logger.error(
-                    "[ThreatSmith] Stage %d failed after retry — aborting pipeline.",
+                    "Stage %d failed after retry — aborting pipeline.",
                     stage_number,
                 )
                 return 1
 
-        logger.info("[ThreatSmith] Pipeline complete.")
+        logger.info("Pipeline complete.")
         return 0

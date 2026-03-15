@@ -11,10 +11,12 @@ import typer
 
 from threatsmith.engines import get_engine
 from threatsmith.orchestrator import Orchestrator
+from threatsmith.utils.logging import configure_logging
 from threatsmith.utils.metadata import generate_metadata, write_metadata
 from threatsmith.utils.scanners import detect_scanners
 
 logger = logging.getLogger(__name__)
+
 
 app = typer.Typer(add_completion=False)
 
@@ -73,16 +75,10 @@ def main(
     ] = False,
 ) -> None:
     """Run ThreatSmith PASTA threat modeling pipeline against a repository."""
-    logging.basicConfig(
-        level=logging.DEBUG if verbose else logging.INFO,
-        format="%(message)s",
-        force=True,
-    )
+    configure_logging(verbose)
     _print_logo()
     if not os.path.isdir(path):
-        logger.error(
-            "[ThreatSmith] Path does not exist or is not a directory: %s", path
-        )
+        logger.error("Path does not exist or is not a directory: %s", path)
         raise SystemExit(1)
     # Resolve output directory (relative to target repo path)
     abs_output_dir = os.path.join(path, output_dir)
@@ -91,7 +87,7 @@ def main(
     # Detect available scanners
     scanner_info = detect_scanners()
     logger.info(
-        "[ThreatSmith] Scanners available: %s",
+        "Scanners available: %s",
         scanner_info["available"] if scanner_info["available"] else ["none"],
     )
 
@@ -112,12 +108,12 @@ def main(
         },
     )
     write_metadata(abs_output_dir, metadata)
-    logger.debug("[ThreatSmith] Metadata written to: %s", abs_output_dir)
+    logger.debug("Metadata written to: %s", abs_output_dir)
 
     commit_hash = metadata.commit_hash
 
     # Run the pipeline
-    logger.info("[ThreatSmith] Starting PASTA pipeline for: %s", path)
+    logger.info("Starting PASTA pipeline for: %s", path)
     engine_instance = get_engine(engine)
     orchestrator = Orchestrator(
         engine=engine_instance,

@@ -14,8 +14,6 @@ class ClaudeCodeEngine(Engine):
     ) -> int:
         """Invoke claude CLI in non-interactive prompt mode and return its exit code."""
         cmd = ["claude", "-p", prompt]
-        logger.debug(
-            "[ThreatSmith] Running: claude -p <prompt> in %s", working_directory
-        )
+        logger.debug("Running: claude -p <prompt> in %s", working_directory)
         result = subprocess.run(cmd, cwd=working_directory)
         return result.returncode
