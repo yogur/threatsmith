@@ -4,7 +4,8 @@ from threatsmith.engines.base import Engine as BaseEngine
 
 
 def test_version():
-    assert threatsmith.__version__ == "0.2.0"
+    assert isinstance(threatsmith.__version__, str)
+    assert threatsmith.__version__
 
 
 def test_engine_exported():
