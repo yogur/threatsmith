@@ -79,6 +79,9 @@ def main(
         force=True,
     )
     _print_logo()
+    if not os.path.isdir(path):
+        logger.error("[ThreatSmith] Path does not exist or is not a directory: %s", path)
+        raise SystemExit(1)
     # Resolve output directory (relative to target repo path)
     abs_output_dir = os.path.join(path, output_dir)
     os.makedirs(abs_output_dir, exist_ok=True)
