@@ -42,7 +42,7 @@ def test_default_engine_is_claude_code(tmp_path):
         ),
         patch(
             "threatsmith.main.generate_metadata",
-            return_value={"commit_hash": "abc", "engine": "claude-code"},
+            return_value=MagicMock(commit_hash="abc"),
         ),
         patch("threatsmith.main.write_metadata"),
     ):
@@ -62,7 +62,7 @@ def test_engine_option_codex(tmp_path):
         ),
         patch(
             "threatsmith.main.generate_metadata",
-            return_value={"commit_hash": "abc", "engine": "codex"},
+            return_value=MagicMock(commit_hash="abc"),
         ),
         patch("threatsmith.main.write_metadata"),
     ):
@@ -82,7 +82,8 @@ def test_output_dir_created(tmp_path):
             return_value={"available": [], "unavailable": []},
         ),
         patch(
-            "threatsmith.main.generate_metadata", return_value={"commit_hash": "abc"}
+            "threatsmith.main.generate_metadata",
+            return_value=MagicMock(commit_hash="abc"),
         ),
         patch("threatsmith.main.write_metadata"),
     ):
@@ -109,7 +110,8 @@ def test_metadata_written_before_pipeline(tmp_path):
             return_value={"available": [], "unavailable": []},
         ),
         patch(
-            "threatsmith.main.generate_metadata", return_value={"commit_hash": "abc"}
+            "threatsmith.main.generate_metadata",
+            return_value=MagicMock(commit_hash="abc"),
         ),
         patch("threatsmith.main.write_metadata", side_effect=fake_write_metadata),
     ):
@@ -136,7 +138,8 @@ def test_business_and_security_objectives_passed(tmp_path):
             return_value={"available": [], "unavailable": []},
         ),
         patch(
-            "threatsmith.main.generate_metadata", return_value={"commit_hash": "abc"}
+            "threatsmith.main.generate_metadata",
+            return_value=MagicMock(commit_hash="abc"),
         ),
         patch("threatsmith.main.write_metadata"),
     ):
@@ -175,7 +178,8 @@ def test_verbose_flag_not_forwarded_to_orchestrator(tmp_path):
             return_value={"available": [], "unavailable": []},
         ),
         patch(
-            "threatsmith.main.generate_metadata", return_value={"commit_hash": "abc"}
+            "threatsmith.main.generate_metadata",
+            return_value=MagicMock(commit_hash="abc"),
         ),
         patch("threatsmith.main.write_metadata"),
     ):
@@ -194,7 +198,8 @@ def test_detect_scanners_called(tmp_path):
             return_value={"available": ["semgrep"], "unavailable": []},
         ) as mock_detect,
         patch(
-            "threatsmith.main.generate_metadata", return_value={"commit_hash": "abc"}
+            "threatsmith.main.generate_metadata",
+            return_value=MagicMock(commit_hash="abc"),
         ),
         patch("threatsmith.main.write_metadata"),
     ):
@@ -212,7 +217,8 @@ def test_pipeline_exit_code_propagated(tmp_path):
             return_value={"available": [], "unavailable": []},
         ),
         patch(
-            "threatsmith.main.generate_metadata", return_value={"commit_hash": "abc"}
+            "threatsmith.main.generate_metadata",
+            return_value=MagicMock(commit_hash="abc"),
         ),
         patch("threatsmith.main.write_metadata"),
     ):

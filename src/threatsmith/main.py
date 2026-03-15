@@ -80,7 +80,9 @@ def main(
     )
     _print_logo()
     if not os.path.isdir(path):
-        logger.error("[ThreatSmith] Path does not exist or is not a directory: %s", path)
+        logger.error(
+            "[ThreatSmith] Path does not exist or is not a directory: %s", path
+        )
         raise SystemExit(1)
     # Resolve output directory (relative to target repo path)
     abs_output_dir = os.path.join(path, output_dir)
@@ -100,19 +102,19 @@ def main(
     }
 
     # Generate and write metadata before starting the pipeline
-    combined_objectives = " | ".join(
-        o for o in [business_objectives, security_objectives] if o
-    )
     metadata = generate_metadata(
         engine_name=engine,
         scanners_available=scanner_info["available"],
         scanners_unavailable=scanner_info["unavailable"],
-        user_objectives=combined_objectives,
+        user_objectives={
+            "business": business_objectives,
+            "security": security_objectives,
+        },
     )
     write_metadata(abs_output_dir, metadata)
     logger.debug("[ThreatSmith] Metadata written to: %s", abs_output_dir)
 
-    commit_hash = metadata.get("commit_hash")
+    commit_hash = metadata.commit_hash
 
     # Run the pipeline
     logger.info("[ThreatSmith] Starting PASTA pipeline for: %s", path)
