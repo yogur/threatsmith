@@ -11,6 +11,7 @@ class CodexEngine(Engine):
         self,
         prompt: str,
         working_directory: str,
+        output_dir: str,
     ) -> int:
         """Invoke codex CLI in non-interactive exec mode and return its exit code."""
         cmd = ["codex", "exec", prompt]

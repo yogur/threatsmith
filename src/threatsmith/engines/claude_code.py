@@ -11,9 +11,18 @@ class ClaudeCodeEngine(Engine):
         self,
         prompt: str,
         working_directory: str,
+        output_dir: str,
     ) -> int:
         """Invoke claude CLI in non-interactive prompt mode and return its exit code."""
-        cmd = ["claude", "-p", prompt]
+        safe_dir = output_dir.rstrip("/")
+        cmd = [
+            "claude",
+            "-p",
+            prompt,
+            "--allowedTools",
+            f"Write({safe_dir}/**)",
+            f"Edit({safe_dir}/**)",
+        ]
         logger.debug("Running: claude -p <prompt> in %s", working_directory)
         try:
             result = subprocess.run(cmd, cwd=working_directory)

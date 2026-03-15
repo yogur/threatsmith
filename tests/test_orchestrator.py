@@ -50,14 +50,14 @@ def _write_stage_files(output_dir: str, stages: list[int] | None = None) -> None
 
 def test_run_full_pipeline_success(tmp_path):
     """Orchestrator returns 0 when all stages succeed and produce output files."""
-    output_dir = str(tmp_path / "threatmodel")
-
     engine = MagicMock(spec=Engine)
 
-    def execute_side_effect(prompt, working_directory):
+    def execute_side_effect(prompt, working_directory, output_dir):
         # Write the next expected file on each call
         call_count = engine.execute.call_count
-        _write_stage_files(output_dir, stages=[call_count])
+        _write_stage_files(
+            os.path.join(working_directory, output_dir), stages=[call_count]
+        )
         return 0
 
     engine.execute.side_effect = execute_side_effect
@@ -73,13 +73,13 @@ def test_run_full_pipeline_success(tmp_path):
 
 def test_run_invokes_engine_with_repo_path(tmp_path):
     """Engine.execute() is called with the repo_path as working_directory."""
-    output_dir = str(tmp_path / "threatmodel")
-
     engine = MagicMock(spec=Engine)
 
-    def execute_side_effect(prompt, working_directory):
+    def execute_side_effect(prompt, working_directory, output_dir):
         call_count = engine.execute.call_count
-        _write_stage_files(output_dir, stages=[call_count])
+        _write_stage_files(
+            os.path.join(working_directory, output_dir), stages=[call_count]
+        )
         return 0
 
     engine.execute.side_effect = execute_side_effect
@@ -100,15 +100,16 @@ def test_run_invokes_engine_with_repo_path(tmp_path):
 
 def test_context_accumulates_across_stages(tmp_path):
     """Each stage's prompt contains outputs from all prior stages."""
-    output_dir = str(tmp_path / "threatmodel")
     captured_prompts: list[str] = []
 
     engine = MagicMock(spec=Engine)
 
-    def execute_side_effect(prompt, working_directory):
+    def execute_side_effect(prompt, working_directory, output_dir):
         captured_prompts.append(prompt)
         call_count = engine.execute.call_count
-        _write_stage_files(output_dir, stages=[call_count])
+        _write_stage_files(
+            os.path.join(working_directory, output_dir), stages=[call_count]
+        )
         return 0
 
     engine.execute.side_effect = execute_side_effect
@@ -162,18 +163,18 @@ def test_missing_output_file_aborts_pipeline(tmp_path):
 
 def test_pipeline_aborts_at_failing_stage(tmp_path):
     """Pipeline stops at the first failing stage and does not continue."""
-    output_dir = str(tmp_path / "threatmodel")
-
     engine = MagicMock(spec=Engine)
 
-    def execute_side_effect(prompt, working_directory):
+    def execute_side_effect(prompt, working_directory, output_dir):
         call_count = engine.execute.call_count
         # Fail stage 3
         # With success for stages 1 and 2 each requiring 1 call,
         # calls 1→stage1, 2→stage2, 3→stage3 (abort)
         if call_count <= 2:
             # Stages 1 and 2 succeed
-            _write_stage_files(output_dir, stages=[call_count])
+            _write_stage_files(
+                os.path.join(working_directory, output_dir), stages=[call_count]
+            )
             return 0
         # Stage 3 always fails
         return 1
@@ -197,13 +198,13 @@ def test_pipeline_aborts_at_failing_stage(tmp_path):
 
 def test_stage_messages_appear_in_log(tmp_path, caplog):
     """Stage start and completion messages are emitted at INFO level."""
-    output_dir = str(tmp_path / "threatmodel")
-
     engine = MagicMock(spec=Engine)
 
-    def execute_side_effect(prompt, working_directory):
+    def execute_side_effect(prompt, working_directory, output_dir):
         call_count = engine.execute.call_count
-        _write_stage_files(output_dir, stages=[call_count])
+        _write_stage_files(
+            os.path.join(working_directory, output_dir), stages=[call_count]
+        )
         return 0
 
     engine.execute.side_effect = execute_side_effect
@@ -220,13 +221,13 @@ def test_stage_messages_appear_in_log(tmp_path, caplog):
 
 def test_context_size_only_in_debug_log(tmp_path, caplog):
     """Accumulated context size is a DEBUG-only detail, not visible at INFO level."""
-    output_dir = str(tmp_path / "threatmodel")
-
     engine = MagicMock(spec=Engine)
 
-    def execute_side_effect(prompt, working_directory):
+    def execute_side_effect(prompt, working_directory, output_dir):
         call_count = engine.execute.call_count
-        _write_stage_files(output_dir, stages=[call_count])
+        _write_stage_files(
+            os.path.join(working_directory, output_dir), stages=[call_count]
+        )
         return 0
 
     engine.execute.side_effect = execute_side_effect
@@ -247,13 +248,13 @@ def test_context_size_only_in_debug_log(tmp_path, caplog):
 
 def test_custom_output_dir(tmp_path):
     """Orchestrator respects a custom output_dir parameter."""
-    output_dir = str(tmp_path / "custom_output")
-
     engine = MagicMock(spec=Engine)
 
-    def execute_side_effect(prompt, working_directory):
+    def execute_side_effect(prompt, working_directory, output_dir):
         call_count = engine.execute.call_count
-        _write_stage_files(output_dir, stages=[call_count])
+        _write_stage_files(
+            os.path.join(working_directory, output_dir), stages=[call_count]
+        )
         return 0
 
     engine.execute.side_effect = execute_side_effect

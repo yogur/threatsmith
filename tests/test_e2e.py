@@ -41,7 +41,9 @@ def _make_writing_engine(output_dir: str) -> Engine:
     engine = MagicMock(spec=Engine)
     call_count = {"n": 0}
 
-    def execute_side_effect(prompt: str, working_directory: str) -> int:
+    def execute_side_effect(
+        prompt: str, working_directory: str, output_dir: str
+    ) -> int:
         call_count["n"] += 1
         stage_idx = call_count["n"] - 1
         filename = _STAGE_FILENAMES[stage_idx]
@@ -110,13 +112,14 @@ def test_e2e_metadata_json_created_with_required_fields(tmp_path):
 
 def test_e2e_context_accumulates_correctly(tmp_path):
     """Stage N prompt contains the outputs from stages 1 through N-1."""
-    output_dir = "threatmodel"
     captured_prompts: list[str] = []
     call_count = {"n": 0}
 
     engine = MagicMock(spec=Engine)
 
-    def execute_side_effect(prompt: str, working_directory: str) -> int:
+    def execute_side_effect(
+        prompt: str, working_directory: str, output_dir: str
+    ) -> int:
         captured_prompts.append(prompt)
         call_count["n"] += 1
         stage_idx = call_count["n"] - 1

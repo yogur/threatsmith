@@ -7,6 +7,7 @@ class Engine(ABC):
         self,
         prompt: str,
         working_directory: str,
+        output_dir: str,
     ) -> int:
         """Execute the engine with the assembled prompt and return an exit code."""
         ...

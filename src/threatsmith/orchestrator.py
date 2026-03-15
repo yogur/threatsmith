@@ -59,7 +59,7 @@ class Orchestrator:
             output_dir=self.output_dir,
         )
 
-        exit_code = self.engine.execute(prompt, self.repo_path)
+        exit_code = self.engine.execute(prompt, self.repo_path, self.output_dir)
 
         if exit_code != 0:
             logger.error(
