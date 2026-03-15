@@ -7,13 +7,15 @@
     ╚═╝    ╚═╝  ╚═╝ ╚═╝  ╚═╝ ╚══════╝ ╚═╝  ╚═╝    ╚═╝    ╚══════╝ ╚═╝     ╚═╝ ╚═╝    ╚═╝    ╚═╝  ╚═╝
 ```
 
-# ThreatSmith
+# ThreatSmith 🔒🤖
 
-ThreatSmith is an AI-powered [PASTA](https://handbook.gitlab.com/handbook/security/product-security/security-platforms-architecture/application-security/threat-modeling/#pasta-stages) (Process for Attack Simulation and Threat Analysis) threat modeling engine. PASTA is a 7-stage, risk-centric methodology that produces structured security artifacts: data flow diagrams, threat inventories, vulnerability assessments, attack trees, and prioritized remediation roadmaps. It is thorough, but the manual effort involved makes full adoption rare.
-
-ThreatSmith automates the entire PASTA pipeline. It runs each stage as a fresh AI coding agent session, assembles prompts with accumulated context from prior stages, auto-detects available security scanners, and validates that each stage produces its expected deliverable. The result is a complete, structured threat model generated directly from your codebase.
+ThreatSmith is an AI-powered PASTA threat modeling engine that automates the entire PASTA pipeline. It runs each stage as a fresh AI coding agent session, assembles prompts with accumulated context from prior stages, auto-detects available security scanners, and validates that each stage produces its expected deliverable. The result is a complete, structured threat model generated directly from your codebase.
 
 **No API keys. No separate billing. No token budgets to manage.** If you have a `Claude Code` or `Codex` subscription, you already have everything you need. Point ThreatSmith at a repository and get a full threat model.
+
+### What is PASTA?
+
+[PASTA (Process for Attack Simulation and Threat Analysis)](https://handbook.gitlab.com/handbook/security/product-security/security-platforms-architecture/application-security/threat-modeling/#pasta-stages) is a 7-stage, risk-centric methodology that produces structured security artifacts: data flow diagrams, threat inventories, vulnerability assessments, attack trees, and prioritized remediation roadmaps. It is thorough, but the manual effort involved makes full adoption rare.
 
 ## Use Cases
 
@@ -78,6 +80,9 @@ uv tool install threatsmith
 
 # With pipx (no virtual environment needed)
 pipx install threatsmith
+
+# With uvx (no virtual environment needed)
+uvx install threatsmith
 ```
 
 ## Quick Start
