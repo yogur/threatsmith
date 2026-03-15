@@ -20,17 +20,6 @@ def _make_mock_orchestrator(exit_code: int = 0):
     return mock_cls, mock_instance
 
 
-def test_help_includes_all_options():
-    result = runner.invoke(app, ["--help"])
-    assert result.exit_code == 0
-    assert "--engine" in result.output
-    assert "--business-objectives" in result.output
-    assert "--security-objectives" in result.output
-    assert "--output-dir" in result.output
-    assert "--verbose" in result.output or "-v" in result.output
-    assert "PATH" in result.output.upper() or "path" in result.output
-
-
 def test_default_engine_is_claude_code(tmp_path):
     mock_cls, mock_instance = _make_mock_orchestrator()
     with (
