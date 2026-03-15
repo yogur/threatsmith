@@ -224,3 +224,17 @@
   - Output file path is constructed as `os.path.join(repo_path, output_dir, filename)` — repo_path is the working directory passed to engine.execute()
   - Verbose-mode context size tracking: `sum(len(v) for v in self._prior_outputs.values())` gives cumulative chars across all accumulated outputs
 ---
+
+## 2026-03-15 - Stdlib logging
+
+- What was implemented: Replaced the hand-rolled `_log()`/`verbose` pattern with Python's stdlib `logging` throughout the package. `main.py` calls `logging.basicConfig(level=DEBUG if verbose else INFO, format="%(message)s", force=True)` as the single configuration point. All modules declare a module-level `logger = logging.getLogger(__name__)`. Orchestrator's `verbose` field and `_log()` method removed entirely.
+- Files changed: `src/threatsmith/main.py`, `src/threatsmith/orchestrator.py`, `src/threatsmith/engines/claude_code.py`, `src/threatsmith/engines/codex.py`, `src/threatsmith/utils/scanners.py`, `src/threatsmith/utils/metadata.py`, `tests/test_orchestrator.py`, `tests/test_cli.py`
+- **Learnings for future iterations:**
+  - `-v` → `logging.DEBUG`, no flag → `logging.INFO` is standard Python CLI convention (pip, ansible, httpx all do this)
+  - Use `force=True` in `logging.basicConfig()` at the CLI entry point — ensures reconfiguration even if handlers were set up earlier (important for tests and repeated invocations)
+  - Library modules use `logging.getLogger(__name__)` only — never call `basicConfig` or configure handlers themselves; callers configure logging, libraries use loggers
+  - Log levels: DEBUG = verbose diagnostics (command run, context size, scanner checks, metadata path); INFO = operational progress (stage start/complete, pipeline start/done, scanner summary); WARNING = non-fatal anomalies before retry (bad exit code, missing output file); ERROR = unrecoverable failures (abort after retry)
+  - Remove `verbose` from dataclass constructor once logging handles verbosity — threading a boolean flag through the object graph is the anti-pattern that stdlib logging was designed to eliminate
+  - Test logging with `caplog.at_level(logging.DEBUG, logger="threatsmith.orchestrator")` — scoped to the module under test to avoid noise from other loggers; check absence of debug details at INFO level to verify level gating works
+  - `test_verbose_flag_passed_to_orchestrator` → `test_verbose_flag_not_forwarded_to_orchestrator`: when refactoring from flag-threading to logging, update tests to assert the flag is NOT forwarded rather than that it is
+---

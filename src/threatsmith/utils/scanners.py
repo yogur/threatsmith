@@ -1,4 +1,7 @@
+import logging
 import shutil
+
+logger = logging.getLogger(__name__)
 
 
 def detect_scanners() -> dict[str, list[str]]:
@@ -15,8 +18,10 @@ def detect_scanners() -> dict[str, list[str]]:
     for scanner in scanners:
         if shutil.which(scanner):
             available.append(scanner)
+            logger.debug("[ThreatSmith] Scanner check: %s — available", scanner)
         else:
             unavailable.append(scanner)
+            logger.debug("[ThreatSmith] Scanner check: %s — not found", scanner)
 
     return {
         "available": available,

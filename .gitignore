@@ -8,10 +8,10 @@ wheels/
 
 .ruff_cache/
 
+.pytest_cache
+
 .cursor
 
 venv/
 .venv/
 .env
-
-output/

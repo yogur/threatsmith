@@ -156,7 +156,8 @@ def test_business_and_security_objectives_passed(tmp_path):
     assert user_obj.get("security_objectives") == "zero trust"
 
 
-def test_verbose_flag_passed_to_orchestrator(tmp_path):
+def test_verbose_flag_not_forwarded_to_orchestrator(tmp_path):
+    """The -v flag configures logging directly; it is not forwarded to Orchestrator."""
     mock_cls, mock_instance = _make_mock_orchestrator()
     captured = {}
 
@@ -180,7 +181,7 @@ def test_verbose_flag_passed_to_orchestrator(tmp_path):
     ):
         runner.invoke(app, [str(tmp_path), "-v"])
 
-    assert captured.get("verbose") is True
+    assert "verbose" not in captured
 
 
 def test_detect_scanners_called(tmp_path):

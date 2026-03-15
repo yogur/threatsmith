@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from dataclasses import dataclass, field
 
 from threatsmith.engines.base import Engine
 from threatsmith.prompts.assembler import assemble_prompt
+
+logger = logging.getLogger(__name__)
 
 # Maps stage_number → (output filename, prior_outputs key)
 _STAGE_FILES: dict[int, tuple[str, str]] = {
@@ -31,12 +34,7 @@ class Orchestrator:
     scanner_info: dict | None = None
     user_objectives: dict | None = None
     commit_hash: str | None = None
-    verbose: bool = False
     _prior_outputs: dict[str, str] = field(default_factory=dict, init=False)
-
-    def _log(self, message: str) -> None:
-        if self.verbose:
-            print(message)
 
     def _output_file_path(self, filename: str) -> str:
         """Absolute path to a deliverable file within the repo's output directory."""
@@ -51,10 +49,12 @@ class Orchestrator:
         output_path = self._output_file_path(filename)
 
         for attempt in range(1, 3):  # attempts 1 and 2
-            self._log(
-                f"[Stage {stage_number}] Starting"
-                + (f" (retry {attempt - 1})" if attempt > 1 else "")
-            )
+            if attempt == 1:
+                logger.info("[ThreatSmith] Stage %d — starting", stage_number)
+            else:
+                logger.info(
+                    "[ThreatSmith] Stage %d — retrying (attempt 2/2)", stage_number
+                )
 
             prompt = assemble_prompt(
                 stage_number=stage_number,
@@ -68,31 +68,43 @@ class Orchestrator:
             exit_code = self.engine.execute(prompt, self.repo_path)
 
             if exit_code != 0:
-                self._log(
-                    f"[Stage {stage_number}] Engine returned non-zero exit code {exit_code}"
-                    + (" — retrying" if attempt == 1 else " — aborting")
+                if attempt == 1:
+                    logger.warning(
+                        "[ThreatSmith] Stage %d: engine returned exit code %d — retrying",
+                        stage_number,
+                        exit_code,
+                    )
+                    continue
+                logger.error(
+                    "[ThreatSmith] Stage %d: engine returned exit code %d — aborting",
+                    stage_number,
+                    exit_code,
                 )
-                if attempt == 2:
-                    return False
-                continue
+                return False
 
             if not os.path.isfile(output_path):
-                self._log(
-                    f"[Stage {stage_number}] Expected output file not found: {output_path}"
-                    + (" — retrying" if attempt == 1 else " — aborting")
+                if attempt == 1:
+                    logger.warning(
+                        "[ThreatSmith] Stage %d: output file not found — retrying",
+                        stage_number,
+                    )
+                    continue
+                logger.error(
+                    "[ThreatSmith] Stage %d: output file not found — aborting",
+                    stage_number,
                 )
-                if attempt == 2:
-                    return False
-                continue
+                return False
 
             # Success — read deliverable and accumulate context
             with open(output_path) as fh:
                 content = fh.read()
             self._prior_outputs[output_key] = content
 
-            self._log(
-                f"[Stage {stage_number}] Completed — "
-                f"context size now {sum(len(v) for v in self._prior_outputs.values())} chars"
+            logger.info("[ThreatSmith] Stage %d — complete", stage_number)
+            logger.debug(
+                "[ThreatSmith] Stage %d: accumulated context %d chars",
+                stage_number,
+                sum(len(v) for v in self._prior_outputs.values()),
             )
             return True
 
@@ -107,10 +119,11 @@ class Orchestrator:
         for stage_number in range(1, 9):
             success = self._run_stage(stage_number)
             if not success:
-                print(
-                    f"[ThreatSmith] Stage {stage_number} failed after retry — aborting pipeline."
+                logger.error(
+                    "[ThreatSmith] Stage %d failed after retry — aborting pipeline.",
+                    stage_number,
                 )
                 return 1
 
-        self._log("[ThreatSmith] Pipeline complete.")
+        logger.info("[ThreatSmith] Pipeline complete.")
         return 0

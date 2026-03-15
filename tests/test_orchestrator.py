@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from unittest.mock import MagicMock
 
@@ -229,12 +230,12 @@ def test_pipeline_aborts_at_failing_stage(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# Verbose mode
+# Logging
 # ---------------------------------------------------------------------------
 
 
-def test_verbose_mode_prints_output(tmp_path, capsys):
-    """Verbose mode prints stage start and completion messages."""
+def test_stage_messages_appear_in_log(tmp_path, caplog):
+    """Stage start and completion messages are emitted at INFO level."""
     output_dir = str(tmp_path / "threatmodel")
 
     engine = MagicMock(spec=Engine)
@@ -246,18 +247,18 @@ def test_verbose_mode_prints_output(tmp_path, capsys):
 
     engine.execute.side_effect = execute_side_effect
 
-    orch = Orchestrator(
-        engine=engine, repo_path=str(tmp_path), output_dir="threatmodel", verbose=True
-    )
-    orch.run()
+    with caplog.at_level(logging.INFO, logger="threatsmith.orchestrator"):
+        orch = Orchestrator(
+            engine=engine, repo_path=str(tmp_path), output_dir="threatmodel"
+        )
+        orch.run()
 
-    captured = capsys.readouterr()
-    assert "Stage 1" in captured.out
-    assert "Completed" in captured.out
+    assert "Stage 1" in caplog.text
+    assert "complete" in caplog.text.lower()
 
 
-def test_non_verbose_mode_no_stage_output(tmp_path, capsys):
-    """Non-verbose mode produces no stdout output during successful run."""
+def test_context_size_only_in_debug_log(tmp_path, caplog):
+    """Accumulated context size is a DEBUG-only detail, not visible at INFO level."""
     output_dir = str(tmp_path / "threatmodel")
 
     engine = MagicMock(spec=Engine)
@@ -269,13 +270,13 @@ def test_non_verbose_mode_no_stage_output(tmp_path, capsys):
 
     engine.execute.side_effect = execute_side_effect
 
-    orch = Orchestrator(
-        engine=engine, repo_path=str(tmp_path), output_dir="threatmodel"
-    )
-    orch.run()
+    with caplog.at_level(logging.INFO, logger="threatsmith.orchestrator"):
+        orch = Orchestrator(
+            engine=engine, repo_path=str(tmp_path), output_dir="threatmodel"
+        )
+        orch.run()
 
-    captured = capsys.readouterr()
-    assert captured.out == ""
+    assert "chars" not in caplog.text
 
 
 # ---------------------------------------------------------------------------

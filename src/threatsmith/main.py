@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import sys
 from typing import Annotated
@@ -12,6 +13,8 @@ from threatsmith.engines import get_engine
 from threatsmith.orchestrator import Orchestrator
 from threatsmith.utils.metadata import generate_metadata, write_metadata
 from threatsmith.utils.scanners import detect_scanners
+
+logger = logging.getLogger(__name__)
 
 app = typer.Typer(add_completion=False)
 
@@ -70,6 +73,11 @@ def main(
     ] = False,
 ) -> None:
     """Run ThreatSmith PASTA threat modeling pipeline against a repository."""
+    logging.basicConfig(
+        level=logging.DEBUG if verbose else logging.INFO,
+        format="%(message)s",
+        force=True,
+    )
     _print_logo()
     # Resolve output directory (relative to target repo path)
     abs_output_dir = os.path.join(path, output_dir)
@@ -77,6 +85,10 @@ def main(
 
     # Detect available scanners
     scanner_info = detect_scanners()
+    logger.info(
+        "[ThreatSmith] Scanners available: %s",
+        scanner_info["available"] if scanner_info["available"] else ["none"],
+    )
 
     # Build user objectives dict
     user_objectives = {
@@ -95,10 +107,12 @@ def main(
         user_objectives=combined_objectives,
     )
     write_metadata(abs_output_dir, metadata)
+    logger.debug("[ThreatSmith] Metadata written to: %s", abs_output_dir)
 
     commit_hash = metadata.get("commit_hash")
 
     # Run the pipeline
+    logger.info("[ThreatSmith] Starting PASTA pipeline for: %s", path)
     engine_instance = get_engine(engine)
     orchestrator = Orchestrator(
         engine=engine_instance,
@@ -107,6 +121,5 @@ def main(
         scanner_info=scanner_info,
         user_objectives=user_objectives,
         commit_hash=commit_hash,
-        verbose=verbose,
     )
     raise SystemExit(orchestrator.run())

@@ -1,9 +1,12 @@
 import json
+import logging
 import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 
 from threatsmith import __version__
+
+logger = logging.getLogger(__name__)
 
 
 def generate_metadata(
@@ -72,5 +75,6 @@ def write_metadata(output_dir: str, metadata: dict) -> None:
         metadata: Metadata dict from generate_metadata()
     """
     output_path = Path(output_dir) / "metadata.json"
+    logger.debug("[ThreatSmith] Writing metadata to: %s", output_path)
     with open(output_path, "w") as f:
         json.dump(metadata, f, indent=2)
