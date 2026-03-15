@@ -138,64 +138,26 @@ def test_context_accumulates_across_stages(tmp_path):
 # ---------------------------------------------------------------------------
 
 
-def test_stage_failure_non_zero_exit_code_retries_then_aborts(tmp_path):
-    """Non-zero exit code causes one retry, then abort with exit code 1."""
+def test_non_zero_exit_code_aborts_pipeline(tmp_path):
+    """Engine returning a non-zero exit code causes the pipeline to abort."""
     engine = _make_engine(exit_code=1)
 
     orch = Orchestrator(
         engine=engine, repo_path=str(tmp_path), output_dir="threatmodel"
     )
-    result = orch.run()
 
-    assert result == 1
-    # Stage 1 tried twice (original + 1 retry), then aborted
-    assert engine.execute.call_count == 2
+    assert orch.run() == 1
 
 
-def test_stage_failure_missing_output_file_retries_then_aborts(tmp_path):
-    """Missing output file causes one retry, then abort with exit code 1."""
-    engine = _make_engine(exit_code=0)
-    # Engine succeeds but never writes files
+def test_missing_output_file_aborts_pipeline(tmp_path):
+    """Engine returning success without writing output aborts the pipeline."""
+    engine = _make_engine(exit_code=0)  # claims success but writes no files
 
     orch = Orchestrator(
         engine=engine, repo_path=str(tmp_path), output_dir="threatmodel"
     )
-    result = orch.run()
 
-    assert result == 1
-    # Stage 1 tried twice (original + 1 retry), then aborted
-    assert engine.execute.call_count == 2
-
-
-def test_stage_retry_succeeds_on_second_attempt(tmp_path):
-    """If stage fails on first attempt but succeeds on retry, pipeline continues."""
-    output_dir = str(tmp_path / "threatmodel")
-    call_count_tracker = {"n": 0}
-
-    engine = MagicMock(spec=Engine)
-
-    def execute_side_effect(prompt, working_directory):
-        call_count_tracker["n"] += 1
-        n = call_count_tracker["n"]
-        if n == 1:
-            # First call for stage 1: fail with non-zero exit code
-            return 1
-        # Stage 1 retry and all subsequent stages succeed
-        # n=2 → stage 1 file, n=3 → stage 2 file, ..., n=9 → stage 8 file.
-        file_index = n - 1  # n=2 → stage 1, n=3 → stage 2, ..., n=9 → stage 8
-        _write_stage_files(output_dir, stages=[file_index])
-        return 0
-
-    engine.execute.side_effect = execute_side_effect
-
-    orch = Orchestrator(
-        engine=engine, repo_path=str(tmp_path), output_dir="threatmodel"
-    )
-    result = orch.run()
-
-    assert result == 0
-    # 1 failure + 1 retry for stage 1 + 7 successful stages = 9 calls
-    assert engine.execute.call_count == 9
+    assert orch.run() == 1
 
 
 def test_pipeline_aborts_at_failing_stage(tmp_path):
@@ -206,10 +168,9 @@ def test_pipeline_aborts_at_failing_stage(tmp_path):
 
     def execute_side_effect(prompt, working_directory):
         call_count = engine.execute.call_count
-        # Fail stage 3 (calls 5 and 6 are the two attempts for stage 3;
-        # calls 1,2 are stage 1; 3,4 are stage 2... wait, no.
+        # Fail stage 3
         # With success for stages 1 and 2 each requiring 1 call,
-        # calls 1→stage1, 2→stage2, 3→stage3 attempt1, 4→stage3 attempt2 (abort)
+        # calls 1→stage1, 2→stage2, 3→stage3 (abort)
         if call_count <= 2:
             # Stages 1 and 2 succeed
             _write_stage_files(output_dir, stages=[call_count])
@@ -225,8 +186,8 @@ def test_pipeline_aborts_at_failing_stage(tmp_path):
     result = orch.run()
 
     assert result == 1
-    # Stages 1, 2 succeed (1 call each) + stage 3 retried twice = 4 calls total
-    assert engine.execute.call_count == 4
+    # Stages 1, 2 succeed (1 call each) + stage 3 fails (1 call) = 3 calls total
+    assert engine.execute.call_count == 3
 
 
 # ---------------------------------------------------------------------------

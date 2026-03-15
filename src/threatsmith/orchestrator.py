@@ -41,84 +41,65 @@ class Orchestrator:
         return os.path.join(self.repo_path, self.output_dir, filename)
 
     def _run_stage(self, stage_number: int) -> bool:
-        """Execute a single stage with one retry on failure.
+        """Execute a single stage.
 
-        Returns True on success, False if both attempts fail.
+        Returns True on success, False on failure.
         """
         filename, output_key = _STAGE_FILES[stage_number]
         output_path = self._output_file_path(filename)
 
-        for attempt in range(1, 3):  # attempts 1 and 2
-            if attempt == 1:
-                logger.info("Stage %d — starting", stage_number)
-            else:
-                logger.info("Stage %d — retrying (attempt 2/2)", stage_number)
+        logger.info("Stage %d — starting", stage_number)
 
-            prompt = assemble_prompt(
-                stage_number=stage_number,
-                prior_outputs=self._prior_outputs,
-                scanner_info=self.scanner_info,
-                user_objectives=self.user_objectives,
-                commit_hash=self.commit_hash,
-                output_dir=self.output_dir,
-            )
+        prompt = assemble_prompt(
+            stage_number=stage_number,
+            prior_outputs=self._prior_outputs,
+            scanner_info=self.scanner_info,
+            user_objectives=self.user_objectives,
+            commit_hash=self.commit_hash,
+            output_dir=self.output_dir,
+        )
 
-            exit_code = self.engine.execute(prompt, self.repo_path)
+        exit_code = self.engine.execute(prompt, self.repo_path)
 
-            if exit_code != 0:
-                if attempt == 1:
-                    logger.warning(
-                        "Stage %d: engine returned exit code %d — retrying",
-                        stage_number,
-                        exit_code,
-                    )
-                    continue
-                logger.error(
-                    "Stage %d: engine returned exit code %d — aborting",
-                    stage_number,
-                    exit_code,
-                )
-                return False
-
-            if not os.path.isfile(output_path):
-                if attempt == 1:
-                    logger.warning(
-                        "Stage %d: output file not found — retrying",
-                        stage_number,
-                    )
-                    continue
-                logger.error(
-                    "Stage %d: output file not found — aborting",
-                    stage_number,
-                )
-                return False
-
-            # Success — read deliverable and accumulate context
-            with open(output_path) as fh:
-                content = fh.read()
-            self._prior_outputs[output_key] = content
-
-            logger.info("Stage %d — complete", stage_number)
-            logger.debug(
-                "Stage %d: accumulated context %d chars",
+        if exit_code != 0:
+            logger.error(
+                "Stage %d: engine returned exit code %d — aborting",
                 stage_number,
-                sum(len(v) for v in self._prior_outputs.values()),
+                exit_code,
             )
-            return True
+            return False
 
-        return False  # unreachable but satisfies type checker
+        if not os.path.isfile(output_path):
+            logger.error(
+                "Stage %d: output file not found — aborting",
+                stage_number,
+            )
+            return False
+
+        # Success — read deliverable and accumulate context
+        with open(output_path) as fh:
+            content = fh.read()
+        self._prior_outputs[output_key] = content
+
+        logger.info("Stage %d — complete", stage_number)
+        logger.debug(
+            "Stage %d: accumulated context %d chars",
+            stage_number,
+            sum(len(v) for v in self._prior_outputs.values()),
+        )
+        return True
 
     def run(self) -> int:
         """Execute all 8 pipeline stages sequentially.
 
         Returns:
-            0 on full success, 1 if any stage fails after retry.
+            0 on full success, 1 if any stage fails.
         """
         for stage_number in range(1, 9):
             success = self._run_stage(stage_number)
             if not success:
                 logger.error(
-                    "Stage %d failed after retry — aborting pipeline.",
+                    "Stage %d failed — aborting pipeline.",
                     stage_number,
                 )
                 return 1

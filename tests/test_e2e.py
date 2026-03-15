@@ -149,21 +149,3 @@ def test_e2e_context_accumulates_correctly(tmp_path):
         assert f"Stage {stage_num} unique marker content" in captured_prompts[7], (
             f"Stage 8 prompt missing output from stage {stage_num}"
         )
-
-
-# ---------------------------------------------------------------------------
-# Failure — missing output file triggers retry then abort
-# ---------------------------------------------------------------------------
-
-
-def test_e2e_missing_output_triggers_retry_then_abort(tmp_path):
-    """Engine succeeds but never writes output — triggers retry then abort."""
-    engine = MagicMock(spec=Engine)
-    engine.execute.return_value = 0  # Always returns success but writes no files
-
-    with patch("threatsmith.main.get_engine", return_value=engine):
-        result = runner.invoke(app, [str(tmp_path)])
-
-    assert result.exit_code == 1
-    # Stage 1 attempted twice (original + 1 retry), then pipeline aborts
-    assert engine.execute.call_count == 2
