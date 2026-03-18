@@ -84,8 +84,8 @@
         "Tests pass"
       ],
       "priority": 5,
-      "passes": false,
-      "notes": "Depends on US-F03 (references package must exist)."
+      "passes": true,
+      "notes": "STRIDE_CATEGORIES constant in prompts/references/stride_categories.py; concise markdown table with bold full category names; 7 tests in test_stride_categories.py"
     },
     {
       "id": "US-F06",

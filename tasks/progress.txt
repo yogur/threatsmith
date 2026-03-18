@@ -1,3 +1,12 @@
+## 2026-03-19 - US-F05
+- Created `src/threatsmith/prompts/references/stride_categories.py` exporting `STRIDE_CATEGORIES` string constant
+- Markdown table with bold full category names (e.g. `**Spoofing**`) — not split-bold like `**S**poofing`, which breaks substring tests
+- Added 7 tests in `tests/test_stride_categories.py` verifying all six category names and all six initial letters
+- Files changed: `src/threatsmith/prompts/references/stride_categories.py` (new), `tests/test_stride_categories.py` (new)
+- **Learnings for future iterations:**
+  - Use `**FullName**` markdown bold in table cells — splitting bold on the first letter (`**S**poofing`) breaks `assert "Spoofing" in constant` tests since the word is no longer a contiguous string
+---
+
 ## Codebase Patterns
 - `evaluate_reference_conditions(reference_config, prior_outputs)` in `prompts/references/__init__.py` is the canonical utility for conditional reference injection. Each entry in `reference_config` is a dict with `"condition"` and `"reference"` keys. Conditions: `always`, `api_detected`, `llm_detected`. The function searches all values in `prior_outputs` (case-insensitively combined) for keyword matches.
 - Keyword constants `API_KEYWORDS` and `LLM_KEYWORDS` in `prompts/references/__init__.py` are the authoritative keyword lists for framework pack reference injection conditions.
