@@ -51,8 +51,8 @@
         "Tests pass"
       ],
       "priority": 3,
-      "passes": false,
-      "notes": "Structural scaffolding. Does not move PASTA stage modules yet — that is US-F04."
+      "passes": true,
+      "notes": "Created prompts/references/ with owasp.py and scanner_snippets.py; created empty __init__.py packages for stride_4q, pasta, linddun, maestro; updated stage_04 and stage_05 imports; removed old owasp_references.py and scanner_snippets.py"
     },
     {
       "id": "US-F04",

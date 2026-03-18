@@ -1,7 +1,7 @@
 """PASTA Stage 4 — Threat Analysis prompt template."""
 
 from threatsmith.prompts.contexts import ThreatAnalysisContext
-from threatsmith.prompts.owasp_references import (
+from threatsmith.prompts.references.owasp import (
     OWASP_API_TOP_10,
     OWASP_LLM_TOP_10,
     OWASP_MOBILE_TOP_10,

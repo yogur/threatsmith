@@ -1,4 +1,6 @@
 ## Codebase Patterns
+- OWASP constants live in `prompts/references/owasp.py`; scanner snippet constants live in `prompts/references/scanner_snippets.py`. Do not import from the old top-level `prompts/owasp_references.py` or `prompts/scanner_snippets.py` — those files were removed in US-F03.
+
 - `frameworks/_built_in.py` registers placeholder packs for all four frameworks at import time; `frameworks/__init__.py` imports it to trigger registration. Later pack builder stories will replace these placeholders.
 - `list_frameworks()` returns `list(_REGISTRY.values())` — order follows insertion order (dict in Python 3.7+).
 
@@ -6,6 +8,18 @@
 - `_REGISTRY` is a module-level dict in `models.py`; tests use the `autouse` fixture to snapshot/restore it so registrations don't leak between tests.
 - `ruff` enforces E731 (no lambda assignments) — use `def` for named callables in tests.
 
+---
+
+## 2026-03-18 - US-F03
+- Created `src/threatsmith/prompts/references/` package with `__init__.py`, `owasp.py`, `scanner_snippets.py`
+- Created empty `__init__.py` packages for `prompts/stride_4q/`, `prompts/pasta/`, `prompts/linddun/`, `prompts/maestro/`
+- Updated `stage_04_threat_analysis.py` to import from `threatsmith.prompts.references.owasp`
+- Updated `stage_05_vulnerability.py` to import from `threatsmith.prompts.references.scanner_snippets`
+- Removed `prompts/owasp_references.py` and `prompts/scanner_snippets.py`
+- Files changed: `src/threatsmith/prompts/references/__init__.py` (new), `src/threatsmith/prompts/references/owasp.py` (new), `src/threatsmith/prompts/references/scanner_snippets.py` (new), `src/threatsmith/prompts/stride_4q/__init__.py` (new), `src/threatsmith/prompts/pasta/__init__.py` (new), `src/threatsmith/prompts/linddun/__init__.py` (new), `src/threatsmith/prompts/maestro/__init__.py` (new), `src/threatsmith/prompts/stage_04_threat_analysis.py`, `src/threatsmith/prompts/stage_05_vulnerability.py`
+- **Learnings for future iterations:**
+  - The new `prompts/references/` package is the canonical home for all shared reference constants (OWASP, scanner snippets, and future STRIDE/LINDDUN/ATLAS constants)
+  - Framework subdirectory `__init__.py` files start empty; pack builder functions are added later (US-F08, F16, F23, F31)
 ---
 
 ## 2026-03-18 - US-F02

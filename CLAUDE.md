@@ -42,8 +42,8 @@ CLI (main.py)
 
 ### Dynamic injection
 
-- **OWASP references** (Stage 4): Web Top 10 always injected. API/LLM/Mobile Top 10 conditionally injected based on case-insensitive keyword matching against Stage 2 output. Constants in `prompts/owasp_references.py`.
-- **Scanner snippets** (Stage 5): Injected per available scanner from `prompts/scanner_snippets.py` `SCANNER_SNIPPETS` dict. `detect_scanners()` returns `{"available": [...], "unavailable": [...]}`.
+- **OWASP references** (Stage 4): Web Top 10 always injected. API/LLM/Mobile Top 10 conditionally injected based on case-insensitive keyword matching against Stage 2 output. Constants in `prompts/references/owasp.py`.
+- **Scanner snippets** (Stage 5): Injected per available scanner from `prompts/references/scanner_snippets.py` `SCANNER_SNIPPETS` dict. `detect_scanners()` returns `{"available": [...], "unavailable": [...]}`.
 
 ### Stage → file mapping
 
