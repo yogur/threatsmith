@@ -1,8 +1,22 @@
 ## Codebase Patterns
+- `frameworks/_built_in.py` registers placeholder packs for all four frameworks at import time; `frameworks/__init__.py` imports it to trigger registration. Later pack builder stories will replace these placeholders.
+- `list_frameworks()` returns `list(_REGISTRY.values())` — order follows insertion order (dict in Python 3.7+).
+
 - Framework data model lives in `frameworks/models.py`; `frameworks/__init__.py` re-exports the public API. Keep `__init__.py` thin.
 - `_REGISTRY` is a module-level dict in `models.py`; tests use the `autouse` fixture to snapshot/restore it so registrations don't leak between tests.
 - `ruff` enforces E731 (no lambda assignments) — use `def` for named callables in tests.
 
+---
+
+## 2026-03-18 - US-F02
+- Added `list_frameworks() -> list[FrameworkPack]` to `frameworks/models.py`
+- Created `frameworks/_built_in.py` with placeholder `FrameworkPack` registrations for all four frameworks (stride-4q, pasta, linddun, maestro)
+- Updated `frameworks/__init__.py` to import `_built_in` (triggers registration) and re-export `list_frameworks`
+- Added 5 tests in `TestListFrameworks` class to `tests/test_frameworks.py`
+- Files changed: `src/threatsmith/frameworks/models.py`, `src/threatsmith/frameworks/__init__.py`, `src/threatsmith/frameworks/_built_in.py` (new), `tests/test_frameworks.py`
+- **Learnings for future iterations:**
+  - `_built_in.py` uses side-effect import pattern — importing the module registers packs. The `clean_registry` fixture snapshots/restores the registry so these registrations don't interfere with tests that manually register their own packs.
+  - When replacing placeholder packs (US-F08, F16, F23, F31), update `_built_in.py` to import from the prompts subdirectory pack builders instead of defining inline stubs.
 ---
 
 ## 2026-03-18 - US-F01

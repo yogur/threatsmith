@@ -5,6 +5,7 @@ from threatsmith.frameworks import (
     FrameworkPack,
     StageSpec,
     get_framework,
+    list_frameworks,
     register_framework,
 )
 
@@ -134,3 +135,26 @@ class TestGetFramework:
         _REGISTRY.clear()
         with pytest.raises(ValueError):
             get_framework("stride-4q")
+
+
+class TestListFrameworks:
+    def test_list_frameworks_returns_all_four(self):
+        packs = list_frameworks()
+        names = {p.name for p in packs}
+        assert names == {"stride-4q", "pasta", "linddun", "maestro"}
+
+    def test_list_frameworks_returns_framework_pack_instances(self):
+        packs = list_frameworks()
+        assert all(isinstance(p, FrameworkPack) for p in packs)
+
+    def test_list_frameworks_each_has_name(self):
+        packs = list_frameworks()
+        assert all(p.name for p in packs)
+
+    def test_list_frameworks_each_has_display_name(self):
+        packs = list_frameworks()
+        assert all(p.display_name for p in packs)
+
+    def test_list_frameworks_each_has_description(self):
+        packs = list_frameworks()
+        assert all(p.description for p in packs)

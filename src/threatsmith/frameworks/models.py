@@ -35,3 +35,7 @@ def get_framework(name: str) -> FrameworkPack:
         return _REGISTRY[name]
     available = ", ".join(sorted(_REGISTRY.keys()))
     raise ValueError(f"Unknown framework '{name}'. Available frameworks: {available}")
+
+
+def list_frameworks() -> list[FrameworkPack]:
+    return list(_REGISTRY.values())
