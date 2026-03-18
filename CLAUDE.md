@@ -51,6 +51,10 @@ Defined in `orchestrator._STAGE_FILES`:
 - `01-objectives.md` through `07-risk-and-impact-analysis.md` (PASTA stages)
 - `08-report.md` (consolidation, not a PASTA stage — no new analysis)
 
+## Package Structure
+
+- **`__init__.py` files must stay thin** — re-exports only, no implementation code. Put logic in named modules (e.g. `conditions.py`, `models.py`) and re-export from `__init__.py` via explicit `from module import X` + `__all__`. This applies to all packages in the codebase.
+
 ## Codebase Patterns
 
 - **Prompt placeholders**: Use `.replace("{placeholder}", value)`, not `.format()` — prompt text contains curly braces that break `.format()`.

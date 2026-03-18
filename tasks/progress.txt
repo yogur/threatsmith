@@ -1,4 +1,6 @@
 ## Codebase Patterns
+- `evaluate_reference_conditions(reference_config, prior_outputs)` in `prompts/references/__init__.py` is the canonical utility for conditional reference injection. Each entry in `reference_config` is a dict with `"condition"` and `"reference"` keys. Conditions: `always`, `api_detected`, `llm_detected`. The function searches all values in `prior_outputs` (case-insensitively combined) for keyword matches.
+- Keyword constants `API_KEYWORDS` and `LLM_KEYWORDS` in `prompts/references/__init__.py` are the authoritative keyword lists for framework pack reference injection conditions.
 - OWASP constants live in `prompts/references/owasp.py`; scanner snippet constants live in `prompts/references/scanner_snippets.py`. Do not import from the old top-level `prompts/owasp_references.py` or `prompts/scanner_snippets.py` — those files were removed in US-F03.
 
 - `frameworks/_built_in.py` registers placeholder packs for all four frameworks at import time; `frameworks/__init__.py` imports it to trigger registration. Later pack builder stories will replace these placeholders.
@@ -7,6 +9,19 @@
 - Framework data model lives in `frameworks/models.py`; `frameworks/__init__.py` re-exports the public API. Keep `__init__.py` thin.
 - `_REGISTRY` is a module-level dict in `models.py`; tests use the `autouse` fixture to snapshot/restore it so registrations don't leak between tests.
 - `ruff` enforces E731 (no lambda assignments) — use `def` for named callables in tests.
+
+---
+
+## 2026-03-18 - US-F04
+- Implemented `evaluate_reference_conditions(reference_config, prior_outputs)` in `src/threatsmith/prompts/references/__init__.py`
+- Supports three conditions: `always` (unconditional), `api_detected` (keyword match), `llm_detected` (keyword match)
+- `API_KEYWORDS` and `LLM_KEYWORDS` are module-level constants per acceptance criteria
+- Added 12 tests in `tests/test_references.py`
+- Files changed: `src/threatsmith/prompts/references/__init__.py`, `tests/test_references.py` (new)
+- **Learnings for future iterations:**
+  - `reference_config` is a `list[dict]` with `"condition"` and `"reference"` keys — this is the dict shape expected by `evaluate_reference_conditions`
+  - The function combines all `prior_outputs` values (joined by space, lowercased) for a single keyword scan pass — efficient for multiple conditions
+  - `mobile_detected` is NOT implemented here (not in acceptance criteria); PASTA stage 4 still handles mobile detection internally with its own `_MOBILE_KEYWORDS`
 
 ---
 

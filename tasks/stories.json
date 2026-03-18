@@ -69,8 +69,8 @@
         "Tests pass"
       ],
       "priority": 4,
-      "passes": false,
-      "notes": "Depends on US-F03 (references package must exist). Extracts the conditional detection logic currently embedded in PASTA Stage 4."
+      "passes": true,
+      "notes": "evaluate_reference_conditions() in prompts/references/__init__.py; supports always/api_detected/llm_detected conditions; keyword lists as module-level constants API_KEYWORDS and LLM_KEYWORDS"
     },
     {
       "id": "US-F05",
