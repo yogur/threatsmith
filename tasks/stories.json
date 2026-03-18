@@ -17,8 +17,8 @@
         "Tests pass"
       ],
       "priority": 1,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "FrameworkPack and StageSpec dataclasses in frameworks/models.py; registry with register_framework/get_framework; __init__.py re-exports public API"
     },
     {
       "id": "US-F02",

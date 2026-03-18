@@ -1,0 +1,17 @@
+## Codebase Patterns
+- Framework data model lives in `frameworks/models.py`; `frameworks/__init__.py` re-exports the public API. Keep `__init__.py` thin.
+- `_REGISTRY` is a module-level dict in `models.py`; tests use the `autouse` fixture to snapshot/restore it so registrations don't leak between tests.
+- `ruff` enforces E731 (no lambda assignments) — use `def` for named callables in tests.
+
+---
+
+## 2026-03-18 - US-F01
+- Implemented framework pack data model
+- Created `src/threatsmith/frameworks/models.py` with `StageSpec`, `FrameworkPack` dataclasses, `_REGISTRY` dict, `register_framework()`, and `get_framework()`
+- Created `src/threatsmith/frameworks/__init__.py` re-exporting the public API
+- Created `tests/test_frameworks.py` with 11 tests covering data model construction, `get_framework` for all four valid names, and invalid name error
+- **Learnings for future iterations:**
+  - Put data model in a named module (`models.py`) rather than `__init__.py` for readability; `__init__.py` just re-exports
+  - Registry fixture pattern: `autouse` fixture snapshots `_REGISTRY` before each test and restores it after — prevents test pollution when registering stubs
+  - `get_framework` error message lists available frameworks alphabetically using `sorted(_REGISTRY.keys())`
+---
