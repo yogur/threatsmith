@@ -160,8 +160,8 @@
         "Tests pass"
       ],
       "priority": 9,
-      "passes": false,
-      "notes": "Depends on US-F01 (FrameworkPack), US-F08 (PASTA pack must exist for regression test). Orchestrator already refactored as part of Deliverable A restructure."
+      "passes": true,
+      "notes": "Implementation was complete from Deliverable A restructure. Added missing tests: mock 3-stage pack (test_mock_3stage_pack_full_pipeline_success), output validation with framework filenames (test_mock_pack_output_validation_uses_framework_filenames), context accumulation with non-PASTA pack (test_mock_pack_context_accumulates)."
     },
     {
       "id": "US-F10",
@@ -178,8 +178,8 @@
         "Tests pass"
       ],
       "priority": 10,
-      "passes": false,
-      "notes": "Depends on US-F01 (StageSpec/FrameworkPack/StageContext), US-F04 (conditional reference utility), US-F08 (PASTA pack for regression). Assembler already refactored as part of Deliverable A restructure."
+      "passes": true,
+      "notes": "Implementation was complete from Deliverable A restructure. Added TestFrameworkAgnosticAssembly class with 5 tests using a custom non-PASTA pack to explicitly verify scanner injection, non-scanner exclusion, and all three reference conditions (always, api_detected, llm_detected)."
     },
     {
       "id": "US-F11",

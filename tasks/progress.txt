@@ -14,6 +14,18 @@
 - All `build_prompt` functions use the generic `StageContext` dataclass — no per-stage typed contexts.
 ---
 
+## 2026-03-19 - US-F09 and US-F10
+- Both orchestrator and assembler were already fully implemented from the Deliverable A restructure
+- Missing: test coverage for "mock 3-stage pack" (US-F09) and "framework-agnostic assembly with non-PASTA pack" (US-F10)
+- Added to `tests/test_orchestrator.py`: `_build_mock_prompt`, `_make_mock_pack`, `test_mock_3stage_pack_full_pipeline_success`, `test_mock_pack_output_validation_uses_framework_filenames`, `test_mock_pack_context_accumulates`
+- Added to `tests/test_assembler.py`: `TestFrameworkAgnosticAssembly` class (5 tests) using a custom `FrameworkPack` with inline `build_prompt` closures to verify scanner injection, non-scanner exclusion, always/api_detected/llm_detected reference conditions
+- Files changed: `tests/test_orchestrator.py`, `tests/test_assembler.py`
+- **Learnings for future iterations:**
+  - Use a dict `{"n": 0}` (not a bare int) for mutable call counters in `execute_side_effect` closures — Python closures can't rebind outer int variables with `=`, but can mutate dict values
+  - Mock pack `build_prompt` functions must use `def` (not lambda) to satisfy ruff E731
+  - The orchestrator key format is `stage_{number:02d}_output` (e.g. `stage_01_output`), NOT `stage.output_file` — this is what `build_prompt` functions expect when looking up prior context
+---
+
 ## 2026-03-19 - PASTA test reorganization
 - Moved all 8 PASTA stage test files from `tests/` root into `tests/pasta/` subdirectory
 - Created `tests/pasta/__init__.py` to make it a proper package

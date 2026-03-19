@@ -8,6 +8,7 @@ from unittest.mock import MagicMock
 
 from threatsmith.engines.base import Engine
 from threatsmith.frameworks.pasta import build_pasta_pack
+from threatsmith.frameworks.types import FrameworkPack, StageContext, StageSpec
 from threatsmith.orchestrator import Orchestrator
 
 # ---------------------------------------------------------------------------
@@ -291,3 +292,140 @@ def test_custom_output_dir(tmp_path):
     result = orch.run()
 
     assert result == 0
+
+
+# ---------------------------------------------------------------------------
+# Mock 3-stage pack — framework-agnostic behaviour
+# ---------------------------------------------------------------------------
+
+
+def _build_mock_prompt(context: StageContext, output_dir: str = "threatmodel") -> str:
+    """Minimal build_prompt for mock stages."""
+    prior = " ".join(context.prior_outputs.values())
+    return f"mock prompt prior={prior}"
+
+
+def _make_mock_pack() -> FrameworkPack:
+    """Return a minimal 3-stage FrameworkPack (2 analysis + 1 report)."""
+    stages = [
+        StageSpec(
+            number=1,
+            name="mock_stage_one",
+            output_file="01-mock-one.md",
+            build_prompt=_build_mock_prompt,
+        ),
+        StageSpec(
+            number=2,
+            name="mock_stage_two",
+            output_file="02-mock-two.md",
+            build_prompt=_build_mock_prompt,
+        ),
+    ]
+    report = StageSpec(
+        number=3,
+        name="mock_report",
+        output_file="03-mock-report.md",
+        build_prompt=_build_mock_prompt,
+    )
+    return FrameworkPack(
+        name="mock",
+        display_name="Mock Framework",
+        description="Mock framework for testing",
+        stages=stages,
+        report_stage=report,
+    )
+
+
+def test_mock_3stage_pack_full_pipeline_success(tmp_path):
+    """Orchestrator runs all 3 stages of a mock pack and returns 0."""
+    mock_pack = _make_mock_pack()
+    all_files = ["01-mock-one.md", "02-mock-two.md", "03-mock-report.md"]
+    engine = MagicMock(spec=Engine)
+    call_state = {"n": 0}
+
+    def execute_side_effect(prompt, working_directory, output_dir):
+        call_state["n"] += 1
+        out_dir = os.path.join(working_directory, output_dir)
+        os.makedirs(out_dir, exist_ok=True)
+        filename = all_files[call_state["n"] - 1]
+        with open(os.path.join(out_dir, filename), "w") as fh:
+            fh.write(f"# {filename} output\n")
+        return 0
+
+    engine.execute.side_effect = execute_side_effect
+
+    orch = Orchestrator(
+        engine=engine,
+        repo_path=str(tmp_path),
+        pack=mock_pack,
+        output_dir="threatmodel",
+    )
+    result = orch.run()
+
+    assert result == 0
+    assert engine.execute.call_count == 3
+
+
+def test_mock_pack_output_validation_uses_framework_filenames(tmp_path):
+    """Output validation checks stage.output_file, not hardcoded names."""
+    mock_pack = _make_mock_pack()
+    engine = MagicMock(spec=Engine)
+
+    # Engine "succeeds" but writes a file with the wrong name
+    def execute_side_effect(prompt, working_directory, output_dir):
+        out_dir = os.path.join(working_directory, output_dir)
+        os.makedirs(out_dir, exist_ok=True)
+        # Write a file with wrong name — orchestrator should not accept it
+        with open(os.path.join(out_dir, "wrong-name.md"), "w") as fh:
+            fh.write("wrong file\n")
+        return 0
+
+    engine.execute.side_effect = execute_side_effect
+
+    orch = Orchestrator(
+        engine=engine,
+        repo_path=str(tmp_path),
+        pack=mock_pack,
+        output_dir="threatmodel",
+    )
+    result = orch.run()
+
+    # Should fail because 01-mock-one.md was not written
+    assert result == 1
+
+
+def test_mock_pack_context_accumulates(tmp_path):
+    """Prior outputs accumulate across stages when using a non-PASTA pack."""
+    mock_pack = _make_mock_pack()
+    all_files = ["01-mock-one.md", "02-mock-two.md", "03-mock-report.md"]
+    captured_prompts: list[str] = []
+    engine = MagicMock(spec=Engine)
+    call_state = {"n": 0}
+
+    def execute_side_effect(prompt, working_directory, output_dir):
+        captured_prompts.append(prompt)
+        call_state["n"] += 1
+        out_dir = os.path.join(working_directory, output_dir)
+        os.makedirs(out_dir, exist_ok=True)
+        filename = all_files[call_state["n"] - 1]
+        with open(os.path.join(out_dir, filename), "w") as fh:
+            fh.write(f"content for {filename}\n")
+        return 0
+
+    engine.execute.side_effect = execute_side_effect
+
+    orch = Orchestrator(
+        engine=engine,
+        repo_path=str(tmp_path),
+        pack=mock_pack,
+        output_dir="threatmodel",
+    )
+    orch.run()
+
+    # Stage 1 prompt has no prior context
+    assert "prior=" in captured_prompts[0]
+    # Stage 2 prompt includes stage 1 output
+    assert "01-mock-one.md" in captured_prompts[1]
+    # Stage 3 (report) prompt includes both prior outputs
+    assert "01-mock-one.md" in captured_prompts[2]
+    assert "02-mock-two.md" in captured_prompts[2]

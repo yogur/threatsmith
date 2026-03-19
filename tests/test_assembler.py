@@ -2,7 +2,8 @@
 
 from threatsmith.assembler import assemble_prompt
 from threatsmith.frameworks.pasta import build_pasta_pack
-from threatsmith.frameworks.types import StageContext
+from threatsmith.frameworks.references.owasp import OWASP_WEB_TOP_10
+from threatsmith.frameworks.types import FrameworkPack, StageContext, StageSpec
 
 
 def _pasta_pack():
@@ -229,3 +230,99 @@ class TestOutputDir:
         stage = _stage(pack, 1)
         result = assemble_prompt(stage, pack)
         assert "threatmodel/" in result
+
+
+# ---------------------------------------------------------------------------
+# Framework-agnostic assembly — non-PASTA pack
+# ---------------------------------------------------------------------------
+
+
+def _make_simple_stage(
+    number: int, is_scanner_stage: bool = False, has_references: bool = False
+) -> StageSpec:
+    """Build a StageSpec whose build_prompt records what context it received."""
+
+    def build_prompt(context: StageContext, output_dir: str = "threatmodel") -> str:
+        scanners = ",".join(context.scanners_available or [])
+        refs = "|".join(context.references)
+        return f"stage={number} scanners={scanners} refs={refs} output_dir={output_dir}"
+
+    return StageSpec(
+        number=number,
+        name=f"stage_{number:02d}",
+        output_file=f"0{number}-output.md",
+        build_prompt=build_prompt,
+    )
+
+
+def _make_custom_pack(scanner_stages: list[int], reference_sets: dict) -> FrameworkPack:
+    analysis = [_make_simple_stage(1), _make_simple_stage(2)]
+    report = _make_simple_stage(3)
+    return FrameworkPack(
+        name="custom",
+        display_name="Custom",
+        description="Custom test pack",
+        stages=analysis,
+        report_stage=report,
+        scanner_stages=scanner_stages,
+        reference_sets=reference_sets,
+    )
+
+
+class TestFrameworkAgnosticAssembly:
+    """assemble_prompt works correctly with non-PASTA packs."""
+
+    def test_scanner_eligible_stage_receives_scanners(self):
+        pack = _make_custom_pack(scanner_stages=[2], reference_sets={})
+        stage = pack.stages[1]  # stage number 2
+        result = assemble_prompt(
+            stage,
+            pack,
+            scanner_info={"available": ["semgrep"], "unavailable": []},
+        )
+        assert "semgrep" in result
+
+    def test_non_scanner_stage_receives_no_scanners(self):
+        pack = _make_custom_pack(scanner_stages=[2], reference_sets={})
+        stage = pack.stages[0]  # stage number 1 — not in scanner_stages
+        result = assemble_prompt(
+            stage,
+            pack,
+            scanner_info={"available": ["semgrep"], "unavailable": []},
+        )
+        assert "scanners=" in result
+        # scanners should be empty for non-scanner stage
+        assert "scanners=semgrep" not in result
+
+    def test_always_reference_resolved_for_custom_pack(self):
+        ref_config = [{"condition": "always", "reference": OWASP_WEB_TOP_10}]
+        pack = _make_custom_pack(scanner_stages=[], reference_sets={1: ref_config})
+        stage = pack.stages[0]  # stage number 1
+        result = assemble_prompt(stage, pack)
+        assert "A01:" in result
+
+    def test_api_detected_reference_included_when_keyword_present(self):
+        from threatsmith.frameworks.references.owasp import OWASP_API_TOP_10
+
+        ref_config = [{"condition": "api_detected", "reference": OWASP_API_TOP_10}]
+        pack = _make_custom_pack(scanner_stages=[], reference_sets={1: ref_config})
+        stage = pack.stages[0]
+        result = assemble_prompt(
+            stage,
+            pack,
+            prior_outputs={"stage_01_output": "The system has a REST API endpoint."},
+        )
+        assert "API1:" in result
+
+    def test_llm_detected_reference_excluded_when_no_keyword(self):
+        from threatsmith.frameworks.references.owasp import OWASP_LLM_TOP_10
+
+        ref_config = [{"condition": "llm_detected", "reference": OWASP_LLM_TOP_10}]
+        pack = _make_custom_pack(scanner_stages=[], reference_sets={1: ref_config})
+        stage = pack.stages[0]
+        result = assemble_prompt(
+            stage,
+            pack,
+            prior_outputs={"stage_01_output": "A simple CRUD application."},
+        )
+        assert "LLM01:" not in result
