@@ -280,8 +280,8 @@
         "Tests pass"
       ],
       "priority": 16,
-      "passes": false,
-      "notes": "Depends on US-F01 (FrameworkPack), US-F05 (STRIDE categories), US-F11 through US-F15 (all stage modules)."
+      "passes": true,
+      "notes": "build_stride_4q_pack() in frameworks/stride_4q/_pack.py; 4 analysis stages + report; scanner_stages=[2]; reference_sets on stage 2: STRIDE_CATEGORIES (always), OWASP_WEB (always), OWASP_API (api_detected), OWASP_LLM (llm_detected), OWASP_MOBILE (mobile_detected); registered in _built_in.py replacing placeholder"
     },
     {
       "id": "US-F17",

@@ -15,6 +15,19 @@
 - All `build_prompt` functions use the generic `StageContext` dataclass — no per-stage typed contexts.
 ---
 
+## 2026-03-19 - US-F16
+- Created `src/threatsmith/frameworks/stride_4q/_pack.py` with `build_stride_4q_pack()` function
+- Created `src/threatsmith/frameworks/stride_4q/__init__.py` exporting `build_stride_4q_pack` (following PASTA pattern: import stage submodules first, then import from `_pack`)
+- Updated `src/threatsmith/frameworks/_built_in.py` to call `build_stride_4q_pack()` instead of placeholder stub
+- Pack: name="stride-4q", display_name="4QF + STRIDE", 4 analysis stages + report, scanner_stages=[2]
+- reference_sets on stage 2: STRIDE_CATEGORIES (always), OWASP_WEB_TOP_10 (always), OWASP_API_TOP_10 (api_detected), OWASP_LLM_TOP_10 (llm_detected), OWASP_MOBILE_TOP_10 (mobile_detected)
+- Created `tests/stride_4q/test_pack.py` with 20 tests: name, display_name, description, stage count, report stage, stage numbers, output files, scanner_stages, reference_sets entry count and conditions for all 5 references, callable build_prompt, no other reference sets
+- Files changed: `src/threatsmith/frameworks/stride_4q/_pack.py` (new), `src/threatsmith/frameworks/stride_4q/__init__.py` (updated), `src/threatsmith/frameworks/_built_in.py` (updated), `tests/stride_4q/test_pack.py` (new)
+- **Learnings for future iterations:**
+  - Pack `__init__.py` must import stage submodules before importing `_pack` — this ensures submodules are in `sys.modules` when `_pack.py` does `from package import stage_XX`, avoiding AttributeError on partial package initialization
+  - When replacing a placeholder in `_built_in.py`, import the pack builder and call it directly; remove the placeholder stub only if no other placeholders need it
+---
+
 ## 2026-03-19 - US-F15
 - Created `src/threatsmith/frameworks/stride_4q/stage_05_report.py` with `STAGE_PROMPT` constant and `build_prompt` function
 - Prompt consolidates Stages 1–4 into a single executive report with no new analysis

@@ -6,6 +6,7 @@ four frameworks.
 """
 
 from threatsmith.frameworks.pasta import build_pasta_pack
+from threatsmith.frameworks.stride_4q import build_stride_4q_pack
 from threatsmith.frameworks.types import FrameworkPack, StageSpec, register_framework
 
 
@@ -22,18 +23,7 @@ def _placeholder_stage(number: int, name: str, output_file: str) -> StageSpec:
     )
 
 
-register_framework(
-    FrameworkPack(
-        name="stride-4q",
-        display_name="4QF + STRIDE",
-        description=(
-            "Four Question Framework with STRIDE. Lightweight, fast, good default "
-            "for most codebases."
-        ),
-        stages=[],
-        report_stage=_placeholder_stage(5, "Report", "05-report.md"),
-    )
-)
+register_framework(build_stride_4q_pack())
 
 register_framework(build_pasta_pack())
 
