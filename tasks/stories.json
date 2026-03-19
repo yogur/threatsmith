@@ -230,8 +230,8 @@
         "Tests pass"
       ],
       "priority": 13,
-      "passes": false,
-      "notes": "Depends on US-F03 (stride_4q package under frameworks/)."
+      "passes": true,
+      "notes": "stage_03_mitigations.py with STAGE_PROMPT and build_prompt; covers countermeasure identification, existing controls assessment, gap analysis, effort estimates, residual risk; 4QF context 'What are we going to do about it?'; 20 tests in tests/stride_4q/"
     },
     {
       "id": "US-F14",

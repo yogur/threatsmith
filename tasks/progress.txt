@@ -15,6 +15,19 @@
 - All `build_prompt` functions use the generic `StageContext` dataclass — no per-stage typed contexts.
 ---
 
+## 2026-03-19 - US-F13
+- Created `src/threatsmith/frameworks/stride_4q/stage_03_mitigations.py` with `STAGE_PROMPT` constant and `build_prompt` function
+- Prompt covers countermeasure identification per threat, existing controls assessment, gap analysis, implementation recommendations with effort estimates (Low/Medium/High), priority ranking (P0–P3), and residual risk assessment
+- Prompt references the Four Question Framework ("What are we going to do about it?")
+- Prompt injects Stages 1–2 outputs via `{prior_stages_section}` placeholder with XML-delimited `<stage_01_system_model>` and `<stage_02_threat_identification>` tags
+- Prompt writes output to `threatmodel/03-mitigations.md`
+- Created `tests/stride_4q/test_stage_03_mitigations.py` with 20 tests: both prior stages injected, each stage independently, absent/empty prior outputs, output file path, custom output dir, trailing slash normalization, placeholder absence, 4QF context, content coverage (countermeasures, existing controls, gap analysis, effort estimates, residual risk)
+- Files changed: `src/threatsmith/frameworks/stride_4q/stage_03_mitigations.py` (new), `tests/stride_4q/test_stage_03_mitigations.py` (new)
+- **Learnings for future iterations:**
+  - Stage 3 uses only `{prior_stages_section}` and `{output_dir}` placeholders — no references or scanners (unlike Stage 2)
+  - Multi-stage prior output injection pattern: each stage output gets its own XML tag within `<prior_stages>`, and each is independently optional (only included when present and non-empty)
+---
+
 ## 2026-03-19 - US-F12
 - Created `src/threatsmith/frameworks/stride_4q/stage_02_threat_identification.py` with `STAGE_PROMPT` constant and `build_prompt` function
 - Prompt performs systematic STRIDE analysis across all Stage 1 components with attacker motivation and capability context
