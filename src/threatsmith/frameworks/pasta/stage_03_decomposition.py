@@ -1,6 +1,6 @@
 """PASTA Stage 3 — Application Decomposition prompt template."""
 
-from threatsmith.prompts.contexts import DecompositionContext
+from threatsmith.frameworks.types import StageContext
 
 STAGE_PROMPT = """\
 You are a threat modeling analyst performing PASTA (Process for Attack Simulation \
@@ -250,20 +250,20 @@ model attacks along every path you trace. What you miss here, they miss entirely
 """
 
 
-def build_prompt(context: DecompositionContext, output_dir: str = "threatmodel") -> str:
+def build_prompt(context: StageContext, output_dir: str = "threatmodel") -> str:
     """Build the complete Stage 3 prompt with optional Stages 1-2 output injection.
 
     Args:
-        context: DecompositionContext with optional stage_01_output and
-                 stage_02_output markdown from prior stages.
+        context: StageContext with optional prior_outputs containing
+                 "stage_01_output" and "stage_02_output" markdown.
         output_dir: Output directory for deliverables (defaults to "threatmodel").
                    Accepts with or without trailing slash.
 
     Returns:
         The fully assembled prompt string.
     """
-    stage_01_output = context.stage_01_output or None
-    stage_02_output = context.stage_02_output or None
+    stage_01_output = context.prior_outputs.get("stage_01_output") or None
+    stage_02_output = context.prior_outputs.get("stage_02_output") or None
     normalized_dir = output_dir.rstrip("/") + "/"
 
     if stage_01_output or stage_02_output:

@@ -1,7 +1,7 @@
 """Tests for the references conditional injection utility."""
 
-from threatsmith.prompts.references.conditions import evaluate_reference_conditions
-from threatsmith.prompts.references.owasp import (
+from threatsmith.frameworks.references.conditions import evaluate_reference_conditions
+from threatsmith.frameworks.references.owasp import (
     OWASP_API_TOP_10,
     OWASP_LLM_TOP_10,
     OWASP_MOBILE_TOP_10,

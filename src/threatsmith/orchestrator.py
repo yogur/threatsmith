@@ -1,4 +1,4 @@
-"""Orchestrator — runs all 7 PASTA stages plus report consolidation sequentially."""
+"""Orchestrator — runs all framework stages plus report consolidation sequentially."""
 
 from __future__ import annotations
 
@@ -6,56 +6,45 @@ import logging
 import os
 from dataclasses import dataclass, field
 
+from threatsmith.assembler import assemble_prompt
 from threatsmith.engines.base import Engine
-from threatsmith.prompts.assembler import assemble_prompt
+from threatsmith.frameworks.types import FrameworkPack, StageSpec
 
 logger = logging.getLogger(__name__)
-
-# Maps stage_number → (output filename, prior_outputs key)
-_STAGE_FILES: dict[int, tuple[str, str]] = {
-    1: ("01-objectives.md", "stage_01_output"),
-    2: ("02-technical-scope.md", "stage_02_output"),
-    3: ("03-application-decomposition.md", "stage_03_output"),
-    4: ("04-threat-analysis.md", "stage_04_output"),
-    5: ("05-vulnerability-analysis.md", "stage_05_output"),
-    6: ("06-attack-modeling.md", "stage_06_output"),
-    7: ("07-risk-and-impact-analysis.md", "stage_07_output"),
-    8: ("08-report.md", "stage_08_output"),
-}
 
 
 @dataclass
 class Orchestrator:
-    """Runs the full PASTA threat modeling pipeline against a target repository."""
+    """Runs a full threat modeling pipeline against a target repository."""
 
     engine: Engine
     repo_path: str
+    pack: FrameworkPack
     output_dir: str = "threatmodel"
     scanner_info: dict | None = None
     user_objectives: dict | None = None
-    commit_hash: str | None = None
     _prior_outputs: dict[str, str] = field(default_factory=dict, init=False)
 
     def _output_file_path(self, filename: str) -> str:
         """Absolute path to a deliverable file within the repo's output directory."""
         return os.path.join(self.repo_path, self.output_dir, filename)
 
-    def _run_stage(self, stage_number: int) -> bool:
+    def _run_stage(self, stage: StageSpec) -> bool:
         """Execute a single stage.
 
         Returns True on success, False on failure.
         """
-        filename, output_key = _STAGE_FILES[stage_number]
-        output_path = self._output_file_path(filename)
+        output_path = self._output_file_path(stage.output_file)
+        output_key = f"stage_{stage.number:02d}_output"
 
-        logger.info("Stage %d — starting", stage_number)
+        logger.info("Stage %d — starting", stage.number)
 
         prompt = assemble_prompt(
-            stage_number=stage_number,
+            stage=stage,
+            pack=self.pack,
             prior_outputs=self._prior_outputs,
             scanner_info=self.scanner_info,
             user_objectives=self.user_objectives,
-            commit_hash=self.commit_hash,
             output_dir=self.output_dir,
         )
 
@@ -64,7 +53,7 @@ class Orchestrator:
         if exit_code != 0:
             logger.error(
                 "Stage %d: engine returned exit code %d — aborting",
-                stage_number,
+                stage.number,
                 exit_code,
             )
             return False
@@ -72,7 +61,7 @@ class Orchestrator:
         if not os.path.isfile(output_path):
             logger.error(
                 "Stage %d: output file not found — aborting",
-                stage_number,
+                stage.number,
             )
             return False
 
@@ -81,26 +70,28 @@ class Orchestrator:
             content = fh.read()
         self._prior_outputs[output_key] = content
 
-        logger.info("Stage %d — complete", stage_number)
+        logger.info("Stage %d — complete", stage.number)
         logger.debug(
             "Stage %d: accumulated context %d chars",
-            stage_number,
+            stage.number,
             sum(len(v) for v in self._prior_outputs.values()),
         )
         return True
 
     def run(self) -> int:
-        """Execute all 8 pipeline stages sequentially.
+        """Execute all pipeline stages sequentially.
 
         Returns:
             0 on full success, 1 if any stage fails.
         """
-        for stage_number in range(1, 9):
-            success = self._run_stage(stage_number)
+        all_stages = list(self.pack.stages) + [self.pack.report_stage]
+
+        for stage in all_stages:
+            success = self._run_stage(stage)
             if not success:
                 logger.error(
                     "Stage %d failed — aborting pipeline.",
-                    stage_number,
+                    stage.number,
                 )
                 return 1
 

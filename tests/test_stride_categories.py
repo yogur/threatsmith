@@ -1,6 +1,6 @@
 """Tests for STRIDE category reference constants."""
 
-from threatsmith.prompts.references.stride_categories import STRIDE_CATEGORIES
+from threatsmith.frameworks.references.stride_categories import STRIDE_CATEGORIES
 
 
 class TestStrideCategories:

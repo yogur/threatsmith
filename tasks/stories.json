@@ -8,9 +8,10 @@
       "title": "Framework pack data model",
       "description": "As a developer, I want a framework pack data model that defines the structure of a threat modeling methodology so that the orchestrator can run any framework without methodology-specific code.",
       "acceptanceCriteria": [
-        "`src/threatsmith/frameworks/__init__.py` exports `FrameworkPack`, `StageSpec`, and `get_framework(name)` function",
+        "`src/threatsmith/frameworks/__init__.py` exports `FrameworkPack`, `StageSpec`, `StageContext`, and `get_framework(name)` function",
         "`StageSpec` dataclass has fields: `number`, `name`, `output_file`, `build_prompt` (callable)",
         "`FrameworkPack` dataclass has fields: `name`, `display_name`, `description`, `stages` (list of StageSpec), `report_stage` (StageSpec), `scanner_stages` (list of int), `reference_sets` (dict mapping stage number to reference config)",
+        "`StageContext` dataclass has fields: `user_objectives` (dict | None), `prior_outputs` (dict), `scanners_available` (list[str] | None), `references` (list[str])",
         "`get_framework` returns the correct pack for `stride-4q`, `pasta`, `linddun`, `maestro`",
         "`get_framework` raises `ValueError` for unknown framework names with a message listing available frameworks",
         "Tests cover: data model construction, get_framework for all valid names, get_framework for invalid name",
@@ -18,7 +19,7 @@
       ],
       "priority": 1,
       "passes": true,
-      "notes": "FrameworkPack and StageSpec dataclasses in frameworks/models.py; registry with register_framework/get_framework; __init__.py re-exports public API"
+      "notes": "FrameworkPack, StageSpec, and StageContext dataclasses in frameworks/types.py; registry with register_framework/get_framework; __init__.py re-exports public API including StageContext"
     },
     {
       "id": "US-F02",
@@ -34,32 +35,36 @@
       ],
       "priority": 2,
       "passes": true,
-      "notes": "list_frameworks() in models.py; _built_in.py registers all four placeholder packs at import time; __init__.py imports _built_in to trigger registration"
+      "notes": "list_frameworks() in types.py; _built_in.py registers all four placeholder packs at import time; __init__.py imports _built_in to trigger registration"
     },
     {
       "id": "US-F03",
-      "title": "Prompt directory restructuring",
-      "description": "As a developer, I want prompt templates organized by framework in subdirectories so that each framework's prompts are isolated and independently maintainable.",
+      "title": "Directory restructuring for framework packs",
+      "description": "As a developer, I want framework code organized under `frameworks/` so that each framework's prompts, pack builder, and references are co-located and independently maintainable.",
       "acceptanceCriteria": [
-        "`src/threatsmith/prompts/references/` directory exists with `__init__.py` and shared reference modules: `owasp.py`, `scanner_snippets.py`",
-        "`src/threatsmith/prompts/stride_4q/` directory exists with `__init__.py`",
-        "`src/threatsmith/prompts/pasta/` directory exists with `__init__.py`",
-        "`src/threatsmith/prompts/linddun/` directory exists with `__init__.py`",
-        "`src/threatsmith/prompts/maestro/` directory exists with `__init__.py`",
-        "Existing OWASP and scanner snippet constants are relocated to `prompts/references/owasp.py` and `prompts/references/scanner_snippets.py`",
+        "`src/threatsmith/frameworks/references/` directory exists with `__init__.py` and shared reference modules: `owasp.py`, `scanner_snippets.py`, `conditions.py`",
+        "`src/threatsmith/frameworks/stride_4q/` directory exists with `__init__.py`",
+        "`src/threatsmith/frameworks/pasta/` directory exists with `__init__.py` and all PASTA stage modules",
+        "`src/threatsmith/frameworks/linddun/` directory exists with `__init__.py`",
+        "`src/threatsmith/frameworks/maestro/` directory exists with `__init__.py`",
+        "`src/threatsmith/prompts/` package is deleted entirely — no backward-compat layer",
+        "OWASP and scanner snippet constants are in `frameworks/references/owasp.py` and `frameworks/references/scanner_snippets.py`",
+        "`evaluate_reference_conditions()` is in `frameworks/references/conditions.py`, re-exported from `frameworks/references/__init__.py`",
+        "Assembler is at `src/threatsmith/assembler.py` (top-level module, not under frameworks/)",
         "All existing import paths are updated so all existing tests pass after relocation",
+        "No import anywhere references `threatsmith.prompts`",
         "Tests pass"
       ],
       "priority": 3,
       "passes": true,
-      "notes": "Created prompts/references/ with owasp.py and scanner_snippets.py; created empty __init__.py packages for stride_4q, pasta, linddun, maestro; updated stage_04 and stage_05 imports; removed old owasp_references.py and scanner_snippets.py"
+      "notes": "Restructured: prompts/ deleted entirely; all framework code under frameworks/; references under frameworks/references/; assembler at top-level src/threatsmith/assembler.py; no circular imports"
     },
     {
       "id": "US-F04",
       "title": "Conditional reference injection utility",
       "description": "As a developer, I want a reusable utility for conditional reference injection so that all frameworks can use keyword-based detection for OWASP and other reference sets.",
       "acceptanceCriteria": [
-        "`src/threatsmith/prompts/references/__init__.py` exports `evaluate_reference_conditions(reference_config: list[dict], prior_outputs: dict) -> list[str]` function",
+        "`src/threatsmith/frameworks/references/__init__.py` exports `evaluate_reference_conditions(reference_config: list[dict], prior_outputs: dict) -> list[str]` function",
         "`always` condition returns the reference string unconditionally",
         "`api_detected` condition matches case-insensitively against keywords: REST, GraphQL, gRPC, API gateway, endpoint, OpenAPI, Swagger",
         "`llm_detected` condition matches case-insensitively against keywords: LangChain, OpenAI, LLM, vector database, embedding, model serving, prompt, agent framework, Claude, GPT",
@@ -70,14 +75,14 @@
       ],
       "priority": 4,
       "passes": true,
-      "notes": "evaluate_reference_conditions() in prompts/references/__init__.py; supports always/api_detected/llm_detected conditions; keyword lists as module-level constants API_KEYWORDS and LLM_KEYWORDS"
+      "notes": "evaluate_reference_conditions() in frameworks/references/conditions.py, re-exported from frameworks/references/__init__.py; supports always/api_detected/llm_detected conditions; keyword lists as module-level constants API_KEYWORDS and LLM_KEYWORDS"
     },
     {
       "id": "US-F05",
       "title": "STRIDE category reference constants",
       "description": "As a developer, I want STRIDE category definitions as a constant so that the 4QF+STRIDE framework can inject them as a systematic reference.",
       "acceptanceCriteria": [
-        "`src/threatsmith/prompts/references/stride_categories.py` exports `STRIDE_CATEGORIES` string constant",
+        "`src/threatsmith/frameworks/references/stride_categories.py` exports `STRIDE_CATEGORIES` string constant",
         "Contains all six STRIDE categories with one-line descriptions: Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, Elevation of Privilege",
         "Formatted as a concise reference block suitable for prompt injection",
         "Tests verify all six categories are present by initial letter (S, T, R, I, D, E)",
@@ -85,14 +90,14 @@
       ],
       "priority": 5,
       "passes": true,
-      "notes": "STRIDE_CATEGORIES constant in prompts/references/stride_categories.py; concise markdown table with bold full category names; 7 tests in test_stride_categories.py"
+      "notes": "STRIDE_CATEGORIES constant in frameworks/references/stride_categories.py; concise markdown table with bold full category names; 7 tests in test_stride_categories.py"
     },
     {
       "id": "US-F06",
       "title": "LINDDUN threat catalogue reference constants",
       "description": "As a developer, I want LINDDUN threat type definitions as a constant so that the LINDDUN Pro framework can inject them as a systematic reference.",
       "acceptanceCriteria": [
-        "`src/threatsmith/prompts/references/linddun_catalogue.py` exports `LINDDUN_THREAT_TYPES` string constant with all seven categories: Linking, Identifying, Non-repudiation, Detecting, Data Disclosure, Unawareness, Non-compliance",
+        "`src/threatsmith/frameworks/references/linddun_catalogue.py` exports `LINDDUN_THREAT_TYPES` string constant with all seven categories: Linking, Identifying, Non-repudiation, Detecting, Data Disclosure, Unawareness, Non-compliance",
         "Each category includes the privacy property it protects",
         "Module exports `LINDDUN_DFD_PATTERNS` string constant mapping DFD element types (process, data store, data flow, external entity) to common threat patterns per LINDDUN category",
         "Tests verify all seven categories are present in `LINDDUN_THREAT_TYPES`",
@@ -101,14 +106,14 @@
       ],
       "priority": 6,
       "passes": false,
-      "notes": "Depends on US-F03 (references package must exist)."
+      "notes": "Depends on US-F03 (references package must exist under frameworks/)."
     },
     {
       "id": "US-F07",
       "title": "MITRE ATLAS reference constants",
       "description": "As a developer, I want MITRE ATLAS technique references as a constant so that the MAESTRO framework can inject them as a systematic reference.",
       "acceptanceCriteria": [
-        "`src/threatsmith/prompts/references/mitre_atlas.py` exports `MITRE_ATLAS_TECHNIQUES` string constant",
+        "`src/threatsmith/frameworks/references/mitre_atlas.py` exports `MITRE_ATLAS_TECHNIQUES` string constant",
         "Contains ATLAS tactics with high-relevance techniques, each with ID and one-line description",
         "Covers at minimum: Reconnaissance, Resource Development, Initial Access, ML Attack Staging, ML Model Access, Exfiltration, Impact",
         "Formatted as a concise reference block suitable for prompt injection",
@@ -118,32 +123,36 @@
       ],
       "priority": 7,
       "passes": false,
-      "notes": "Depends on US-F03 (references package must exist)."
+      "notes": "Depends on US-F03 (references package must exist under frameworks/)."
     },
     {
       "id": "US-F08",
       "title": "PASTA migration into pack structure",
       "description": "As a developer, I want the existing PASTA prompts migrated into the framework pack structure with zero behavioral changes so that PASTA continues to work identically.",
       "acceptanceCriteria": [
-        "All PASTA stage prompt modules are moved to `src/threatsmith/prompts/pasta/` (stage_01 through stage_08)",
-        "`src/threatsmith/prompts/pasta/__init__.py` exports `build_pasta_pack() -> FrameworkPack`",
+        "All PASTA stage prompt modules are at `src/threatsmith/frameworks/pasta/` (stage_01 through stage_08)",
+        "`src/threatsmith/frameworks/pasta/__init__.py` exports `build_pasta_pack() -> FrameworkPack`",
+        "Pack builder implementation is in `src/threatsmith/frameworks/pasta/_pack.py`",
         "The returned pack defines 7 analysis stages + 1 report stage with correct output filenames matching original `_STAGE_FILES` mapping",
         "`scanner_stages` is `[5]`",
         "`reference_sets` on stage 4 includes OWASP Web Top 10 with `always` condition, OWASP API Top 10 with `api_detected` condition, OWASP LLM Top 10 with `llm_detected` condition",
-        "All existing PASTA tests pass without modification to test assertions (only import paths change if necessary)",
+        "All PASTA `build_prompt` functions use the generic `StageContext` dataclass (not per-stage typed contexts)",
+        "OWASP keyword detection is handled by the assembler via `evaluate_reference_conditions()`, not by stage_04's `build_prompt`",
+        "Stage 4's `build_prompt` receives pre-resolved references via `context.references`",
+        "All existing PASTA tests pass with updated import paths (`frameworks.pasta` not `prompts.pasta`)",
         "Tests pass"
       ],
       "priority": 8,
-      "passes": false,
-      "notes": "Depends on US-F01 (FrameworkPack model), US-F03 (directory structure), US-F04 (conditional references)."
+      "passes": true,
+      "notes": "All 8 stage modules under frameworks/pasta/; build_pasta_pack() in _pack.py; all build_prompt functions use StageContext; OWASP injection centralized in assembler; no circular imports (pack builder imports from frameworks.types directly)"
     },
     {
       "id": "US-F09",
       "title": "Orchestrator refactor for framework-agnostic execution",
       "description": "As a developer, I want the orchestrator to iterate over a framework pack's stage list instead of hardcoded stage numbers so that it can run any framework.",
       "acceptanceCriteria": [
-        "`Orchestrator.__init__` accepts a `framework: FrameworkPack` parameter replacing any hardcoded stage assumptions",
-        "`Orchestrator.run()` iterates `framework.stages` then runs `framework.report_stage`",
+        "`Orchestrator.__init__` accepts a `pack: FrameworkPack` parameter replacing any hardcoded stage assumptions",
+        "`Orchestrator.run()` iterates `pack.stages` then runs `pack.report_stage`",
         "Output validation checks for `stage.output_file` instead of hardcoded filenames",
         "Context accumulation uses `stage.output_file` as the key for reading deliverables into `_prior_outputs`",
         "The orchestrator does not import or reference any framework-specific modules",
@@ -152,15 +161,16 @@
       ],
       "priority": 9,
       "passes": false,
-      "notes": "Depends on US-F01 (FrameworkPack), US-F08 (PASTA pack must exist for regression test)."
+      "notes": "Depends on US-F01 (FrameworkPack), US-F08 (PASTA pack must exist for regression test). Orchestrator already refactored as part of Deliverable A restructure."
     },
     {
       "id": "US-F10",
       "title": "Assembler refactor for framework-agnostic prompt assembly",
       "description": "As a developer, I want the assembler to use the framework pack's stage definitions and reference configuration instead of hardcoded stage-to-module mappings.",
       "acceptanceCriteria": [
+        "Assembler is at `src/threatsmith/assembler.py` (top-level module)",
         "`assemble_prompt` accepts a `StageSpec` and `FrameworkPack` instead of a stage number",
-        "`assemble_prompt` calls `stage.build_prompt(context)` directly instead of selecting a module by number",
+        "`assemble_prompt` builds a `StageContext` and calls `stage.build_prompt(context, output_dir=output_dir)` directly",
         "Scanner snippets are injected only when the stage number is in `pack.scanner_stages`",
         "Reference sets are resolved from `pack.reference_sets[stage.number]` using `evaluate_reference_conditions`",
         "All existing assembler tests are updated to use the new interface",
@@ -169,37 +179,37 @@
       ],
       "priority": 10,
       "passes": false,
-      "notes": "Depends on US-F01 (StageSpec/FrameworkPack), US-F04 (conditional reference utility), US-F08 (PASTA pack for regression)."
+      "notes": "Depends on US-F01 (StageSpec/FrameworkPack/StageContext), US-F04 (conditional reference utility), US-F08 (PASTA pack for regression). Assembler already refactored as part of Deliverable A restructure."
     },
     {
       "id": "US-F11",
       "title": "4QF+STRIDE Stage 1 prompt — System Model",
       "description": "As a developer, I want a prompt template for the 4QF+STRIDE System Model stage so that the agent produces a comprehensive application model as the foundation for threat identification.",
       "acceptanceCriteria": [
-        "`src/threatsmith/prompts/stride_4q/stage_01_system_model.py` exports `STAGE_PROMPT` string constant",
+        "`src/threatsmith/frameworks/stride_4q/stage_01_system_model.py` exports `STAGE_PROMPT` string constant",
         "Prompt covers: application purpose and scope, technology stack, data flows, actors and assets, trust boundaries, entry points, external dependencies, deployment context",
         "Prompt instructs the agent to produce at minimum one Mermaid DFD",
         "Prompt instructs the agent to write output to `threatmodel/01-system-model.md`",
-        "Module exports `build_prompt(context: dict) -> str` that injects user objectives when provided and omits the objectives section when not provided",
+        "Module exports `build_prompt(context: StageContext, output_dir: str = \"threatmodel\") -> str` that injects user objectives when provided and omits the objectives section when not provided",
         "Tests cover: build_prompt with objectives, build_prompt without objectives",
         "Tests pass"
       ],
       "priority": 11,
       "passes": false,
-      "notes": "Depends on US-F03 (stride_4q package must exist)."
+      "notes": "Depends on US-F03 (stride_4q package must exist under frameworks/)."
     },
     {
       "id": "US-F12",
       "title": "4QF+STRIDE Stage 2 prompt — Threat Identification",
       "description": "As a developer, I want a prompt template for the 4QF+STRIDE Threat Identification stage so that the agent performs systematic STRIDE analysis per component.",
       "acceptanceCriteria": [
-        "`src/threatsmith/prompts/stride_4q/stage_02_threat_identification.py` exports `STAGE_PROMPT` string constant",
+        "`src/threatsmith/frameworks/stride_4q/stage_02_threat_identification.py` exports `STAGE_PROMPT` string constant",
         "Prompt instructs systematic STRIDE analysis across all components identified in Stage 1",
         "Prompt requires threat scenarios for each applicable STRIDE category with attacker motivation and capability context",
         "Prompt references OWASP Top 10 as a coverage checklist",
         "Prompt instructs the agent to integrate scanner results when scanner context is present in the prompt",
         "Prompt instructs the agent to write output to `threatmodel/02-threat-identification.md`",
-        "Module exports `build_prompt(context: dict) -> str` that injects Stage 1 output, STRIDE categories, OWASP references, and scanner context when present",
+        "Module exports `build_prompt(context: StageContext, output_dir: str = \"threatmodel\") -> str` that injects Stage 1 output, STRIDE categories, OWASP references, and scanner context when present",
         "Tests cover: build_prompt with all context types present, STRIDE reference appears in output, OWASP reference appears in output, scanner snippet appears when scanner context provided, scanner snippet absent when scanner context not provided",
         "Tests pass"
       ],
@@ -212,56 +222,56 @@
       "title": "4QF+STRIDE Stage 3 prompt — Mitigations",
       "description": "As a developer, I want a prompt template for the 4QF+STRIDE Mitigations stage so that the agent maps countermeasures to identified threats.",
       "acceptanceCriteria": [
-        "`src/threatsmith/prompts/stride_4q/stage_03_mitigations.py` exports `STAGE_PROMPT` string constant",
+        "`src/threatsmith/frameworks/stride_4q/stage_03_mitigations.py` exports `STAGE_PROMPT` string constant",
         "Prompt covers: countermeasure identification per threat, existing controls assessment, gap analysis, implementation recommendations with effort estimates, residual risk",
         "Prompt instructs the agent to write output to `threatmodel/03-mitigations.md`",
-        "Module exports `build_prompt(context: dict) -> str` that injects Stages 1–2 outputs",
+        "Module exports `build_prompt(context: StageContext, output_dir: str = \"threatmodel\") -> str` that injects Stages 1–2 outputs",
         "Tests cover: build_prompt with prior stage context injected",
         "Tests pass"
       ],
       "priority": 13,
       "passes": false,
-      "notes": "Depends on US-F03 (stride_4q package)."
+      "notes": "Depends on US-F03 (stride_4q package under frameworks/)."
     },
     {
       "id": "US-F14",
       "title": "4QF+STRIDE Stage 4 prompt — Validation",
       "description": "As a developer, I want a prompt template for the 4QF+STRIDE Validation stage so that the agent verifies completeness and identifies remaining gaps.",
       "acceptanceCriteria": [
-        "`src/threatsmith/prompts/stride_4q/stage_04_validation.py` exports `STAGE_PROMPT` string constant",
+        "`src/threatsmith/frameworks/stride_4q/stage_04_validation.py` exports `STAGE_PROMPT` string constant",
         "Prompt covers: component coverage verification, STRIDE category coverage verification, mitigation completeness for high-priority threats, remaining gaps, accepted risks with justification, recommended next steps and review cadence",
         "Prompt instructs the agent to write output to `threatmodel/04-validation.md`",
-        "Module exports `build_prompt(context: dict) -> str` that injects Stages 1–3 outputs",
+        "Module exports `build_prompt(context: StageContext, output_dir: str = \"threatmodel\") -> str` that injects Stages 1–3 outputs",
         "Tests cover: build_prompt with prior stage context injected",
         "Tests pass"
       ],
       "priority": 14,
       "passes": false,
-      "notes": "Depends on US-F03 (stride_4q package)."
+      "notes": "Depends on US-F03 (stride_4q package under frameworks/)."
     },
     {
       "id": "US-F15",
       "title": "4QF+STRIDE Stage 5 prompt — Report Consolidation",
       "description": "As a developer, I want a prompt template for the 4QF+STRIDE report consolidation step.",
       "acceptanceCriteria": [
-        "`src/threatsmith/prompts/stride_4q/stage_05_report.py` exports `STAGE_PROMPT` string constant",
+        "`src/threatsmith/frameworks/stride_4q/stage_05_report.py` exports `STAGE_PROMPT` string constant",
         "Prompt instructs consolidation of Stages 1–4 into a single executive report with no new analysis",
         "Prompt instructs preservation of Mermaid diagrams, threat tables, and mitigation recommendations",
         "Prompt instructs the agent to write output to `threatmodel/05-report.md`",
-        "Module exports `build_prompt(context: dict) -> str` that injects Stages 1–4 outputs",
+        "Module exports `build_prompt(context: StageContext, output_dir: str = \"threatmodel\") -> str` that injects Stages 1–4 outputs",
         "Tests cover: build_prompt with all four stage outputs injected",
         "Tests pass"
       ],
       "priority": 15,
       "passes": false,
-      "notes": "Depends on US-F03 (stride_4q package)."
+      "notes": "Depends on US-F03 (stride_4q package under frameworks/)."
     },
     {
       "id": "US-F16",
       "title": "4QF+STRIDE pack builder",
       "description": "As a developer, I want a pack builder function that assembles the 4QF+STRIDE framework pack so that it can be registered in the framework registry.",
       "acceptanceCriteria": [
-        "`src/threatsmith/prompts/stride_4q/__init__.py` exports `build_stride_4q_pack() -> FrameworkPack`",
+        "`src/threatsmith/frameworks/stride_4q/__init__.py` exports `build_stride_4q_pack() -> FrameworkPack`",
         "Pack has `name=\"stride-4q\"` and `display_name=\"4QF + STRIDE\"`",
         "Pack defines exactly 4 analysis stages and 1 report stage with correct output filenames and `build_prompt` references",
         "`scanner_stages` is `[2]`",
@@ -278,108 +288,108 @@
       "title": "LINDDUN Pro Stage 1 prompt — System Context and Data Inventory",
       "description": "As a developer, I want a prompt template for the LINDDUN Pro System Context stage focused on personal data inventory and regulatory context.",
       "acceptanceCriteria": [
-        "`src/threatsmith/prompts/linddun/stage_01_system_context.py` exports `STAGE_PROMPT` string constant",
+        "`src/threatsmith/frameworks/linddun/stage_01_system_context.py` exports `STAGE_PROMPT` string constant",
         "Prompt covers: personal data inventory (collected, processed, stored, transmitted), data subjects identification, processing purposes and legal basis, retention policies, regulatory context (GDPR, HIPAA, CCPA), third-party data sharing and processor relationships",
         "Prompt instructs the agent to examine data models, schemas, config, privacy policies, and documentation for privacy-relevant signals",
         "Prompt instructs the agent to write output to `threatmodel/01-system-context.md`",
-        "Module exports `build_prompt(context: dict) -> str` that injects user objectives when provided and omits the section when not provided",
+        "Module exports `build_prompt(context: StageContext, output_dir: str = \"threatmodel\") -> str` that injects user objectives when provided and omits the section when not provided",
         "Tests cover: build_prompt with objectives, build_prompt without objectives",
         "Tests pass"
       ],
       "priority": 17,
       "passes": false,
-      "notes": "Depends on US-F03 (linddun package must exist)."
+      "notes": "Depends on US-F03 (linddun package must exist under frameworks/)."
     },
     {
       "id": "US-F18",
       "title": "LINDDUN Pro Stage 2 prompt — Data Flow Decomposition",
       "description": "As a developer, I want a prompt template for the LINDDUN Pro Data Flow stage with privacy-annotated DFDs.",
       "acceptanceCriteria": [
-        "`src/threatsmith/prompts/linddun/stage_02_data_flow.py` exports `STAGE_PROMPT` string constant",
+        "`src/threatsmith/frameworks/linddun/stage_02_data_flow.py` exports `STAGE_PROMPT` string constant",
         "Prompt instructs privacy-annotated Mermaid DFDs showing personal data flows annotated with: data types, data subjects, processing purpose, encryption status, retention",
         "Prompt covers: trust boundaries with privacy significance, data minimization assessment, storage locations and access patterns for personal data",
         "Prompt instructs the agent to write output to `threatmodel/02-data-flow.md`",
-        "Module exports `build_prompt(context: dict) -> str` that injects Stage 1 output",
+        "Module exports `build_prompt(context: StageContext, output_dir: str = \"threatmodel\") -> str` that injects Stage 1 output",
         "Tests cover: build_prompt with Stage 1 context injected",
         "Tests pass"
       ],
       "priority": 18,
       "passes": false,
-      "notes": "Depends on US-F03 (linddun package)."
+      "notes": "Depends on US-F03 (linddun package under frameworks/)."
     },
     {
       "id": "US-F19",
       "title": "LINDDUN Pro Stage 3 prompt — Threat Elicitation",
       "description": "As a developer, I want a prompt template for the LINDDUN Pro Threat Elicitation stage with systematic per-DFD-element analysis across all seven LINDDUN categories.",
       "acceptanceCriteria": [
-        "`src/threatsmith/prompts/linddun/stage_03_threat_elicitation.py` exports `STAGE_PROMPT` string constant",
+        "`src/threatsmith/frameworks/linddun/stage_03_threat_elicitation.py` exports `STAGE_PROMPT` string constant",
         "Prompt instructs systematic application of all seven LINDDUN categories (L, I, N, D, D, U, N) to each DFD element from Stage 2",
         "Prompt requires concrete threat scenarios for each applicable category-element combination",
         "Prompt instructs cross-referencing with the LINDDUN threat catalogue injected in context",
         "Prompt instructs the agent to write output to `threatmodel/03-threat-elicitation.md`",
-        "Module exports `build_prompt(context: dict) -> str` that injects Stages 1–2 outputs and the LINDDUN threat catalogue reference",
+        "Module exports `build_prompt(context: StageContext, output_dir: str = \"threatmodel\") -> str` that injects Stages 1–2 outputs and the LINDDUN threat catalogue reference via `context.references`",
         "Tests cover: build_prompt with prior context and LINDDUN catalogue appears in output",
         "Tests pass"
       ],
       "priority": 19,
       "passes": false,
-      "notes": "Depends on US-F06 (LINDDUN catalogue constants), US-F03 (linddun package)."
+      "notes": "Depends on US-F06 (LINDDUN catalogue constants), US-F03 (linddun package under frameworks/)."
     },
     {
       "id": "US-F20",
       "title": "LINDDUN Pro Stage 4 prompt — Threat Prioritization",
       "description": "As a developer, I want a prompt template for the LINDDUN Pro Threat Prioritization stage with privacy-focused risk assessment.",
       "acceptanceCriteria": [
-        "`src/threatsmith/prompts/linddun/stage_04_threat_prioritization.py` exports `STAGE_PROMPT` string constant",
+        "`src/threatsmith/frameworks/linddun/stage_04_threat_prioritization.py` exports `STAGE_PROMPT` string constant",
         "Prompt covers: likelihood and impact assessment with privacy-specific dimensions (data subjects affected, data sensitivity, regulatory consequences, reputational damage), risk rating using a structured scale, threat grouping by risk level, identification of threats that interact or amplify each other",
         "Prompt instructs the agent to write output to `threatmodel/04-threat-prioritization.md`",
-        "Module exports `build_prompt(context: dict) -> str` that injects Stages 1–3 outputs",
+        "Module exports `build_prompt(context: StageContext, output_dir: str = \"threatmodel\") -> str` that injects Stages 1–3 outputs",
         "Tests cover: build_prompt with prior stage context injected",
         "Tests pass"
       ],
       "priority": 20,
       "passes": false,
-      "notes": "Depends on US-F03 (linddun package)."
+      "notes": "Depends on US-F03 (linddun package under frameworks/)."
     },
     {
       "id": "US-F21",
       "title": "LINDDUN Pro Stage 5 prompt — Mitigation Selection",
       "description": "As a developer, I want a prompt template for the LINDDUN Pro Mitigation stage with privacy enhancing technologies and privacy patterns.",
       "acceptanceCriteria": [
-        "`src/threatsmith/prompts/linddun/stage_05_mitigation.py` exports `STAGE_PROMPT` string constant",
+        "`src/threatsmith/frameworks/linddun/stage_05_mitigation.py` exports `STAGE_PROMPT` string constant",
         "Prompt covers: PET mapping per threat, mitigation strategies organized by LINDDUN category (data minimization, anonymization, pseudonymization, access control, encryption, transparency, consent management, purpose limitation), gap analysis, implementation recommendations with effort and complexity, residual privacy risk, DPIA considerations",
         "Prompt instructs the agent to write output to `threatmodel/05-mitigation.md`",
-        "Module exports `build_prompt(context: dict) -> str` that injects Stages 1–4 outputs and the LINDDUN mitigation reference from `LINDDUN_DFD_PATTERNS`",
+        "Module exports `build_prompt(context: StageContext, output_dir: str = \"threatmodel\") -> str` that injects Stages 1–4 outputs and the LINDDUN mitigation reference via `context.references`",
         "Tests cover: build_prompt with prior context and mitigation reference appears in output",
         "Tests pass"
       ],
       "priority": 21,
       "passes": false,
-      "notes": "Depends on US-F06 (LINDDUN catalogue constants), US-F03 (linddun package)."
+      "notes": "Depends on US-F06 (LINDDUN catalogue constants), US-F03 (linddun package under frameworks/)."
     },
     {
       "id": "US-F22",
       "title": "LINDDUN Pro Stage 6 prompt — Report Consolidation",
       "description": "As a developer, I want a prompt template for the LINDDUN Pro report consolidation step.",
       "acceptanceCriteria": [
-        "`src/threatsmith/prompts/linddun/stage_06_report.py` exports `STAGE_PROMPT` string constant",
+        "`src/threatsmith/frameworks/linddun/stage_06_report.py` exports `STAGE_PROMPT` string constant",
         "Prompt instructs consolidation of Stages 1–5 into a single privacy risk report with no new analysis",
         "Prompt instructs preservation of DFDs, threat tables, and PET recommendations",
         "Prompt instructs the agent to write output to `threatmodel/06-report.md`",
-        "Module exports `build_prompt(context: dict) -> str` that injects Stages 1–5 outputs",
+        "Module exports `build_prompt(context: StageContext, output_dir: str = \"threatmodel\") -> str` that injects Stages 1–5 outputs",
         "Tests cover: build_prompt with all five stage outputs injected",
         "Tests pass"
       ],
       "priority": 22,
       "passes": false,
-      "notes": "Depends on US-F03 (linddun package)."
+      "notes": "Depends on US-F03 (linddun package under frameworks/)."
     },
     {
       "id": "US-F23",
       "title": "LINDDUN Pro pack builder",
       "description": "As a developer, I want a pack builder function that assembles the LINDDUN Pro framework pack.",
       "acceptanceCriteria": [
-        "`src/threatsmith/prompts/linddun/__init__.py` exports `build_linddun_pack() -> FrameworkPack`",
+        "`src/threatsmith/frameworks/linddun/__init__.py` exports `build_linddun_pack() -> FrameworkPack`",
         "Pack has `name=\"linddun\"` and `display_name=\"LINDDUN Pro\"`",
         "Pack defines exactly 5 analysis stages and 1 report stage with correct output filenames and `build_prompt` references",
         "`scanner_stages` is `[]` (empty list)",
@@ -396,123 +406,123 @@
       "title": "MAESTRO Stage 1 prompt — AI System Profiling",
       "description": "As a developer, I want a prompt template for the MAESTRO AI System Profiling stage focused on inventorying AI/ML components, models, and agent capabilities.",
       "acceptanceCriteria": [
-        "`src/threatsmith/prompts/maestro/stage_01_ai_system_profiling.py` exports `STAGE_PROMPT` string constant",
+        "`src/threatsmith/frameworks/maestro/stage_01_ai_system_profiling.py` exports `STAGE_PROMPT` string constant",
         "Prompt covers: AI/ML component inventory (models, training pipelines, inference services, agent frameworks, vector databases, embedding stores), model metadata, agent capabilities (tool access, autonomy level, decision scope, HITL controls), integration points with traditional components, training data sensitivity, business context and consequences of AI failure",
         "Prompt instructs the agent to examine model configs, agent definitions, ML framework imports, API integrations, and pipeline definitions",
         "Prompt instructs the agent to write output to `threatmodel/01-ai-system-profiling.md`",
-        "Module exports `build_prompt(context: dict) -> str` that injects user objectives when provided and omits the section when not provided",
+        "Module exports `build_prompt(context: StageContext, output_dir: str = \"threatmodel\") -> str` that injects user objectives when provided and omits the section when not provided",
         "Tests cover: build_prompt with objectives, build_prompt without objectives",
         "Tests pass"
       ],
       "priority": 24,
       "passes": false,
-      "notes": "Depends on US-F03 (maestro package must exist)."
+      "notes": "Depends on US-F03 (maestro package must exist under frameworks/)."
     },
     {
       "id": "US-F25",
       "title": "MAESTRO Stage 2 prompt — Architecture and Data Flow",
       "description": "As a developer, I want a prompt template for the MAESTRO Architecture stage focused on AI-specific architecture decomposition and data flow.",
       "acceptanceCriteria": [
-        "`src/threatsmith/prompts/maestro/stage_02_architecture.py` exports `STAGE_PROMPT` string constant",
+        "`src/threatsmith/frameworks/maestro/stage_02_architecture.py` exports `STAGE_PROMPT` string constant",
         "Prompt covers: AI-specific architecture (model serving, training pipeline, feature stores, model registries, orchestration layers), Mermaid DFDs for training pipeline, inference pipeline, and agent execution flow, AI-specific trust boundaries (model, agent, training, deployment), supply chain mapping (model sources, framework dependencies, dataset provenance)",
         "Prompt instructs the agent to write output to `threatmodel/02-architecture.md`",
-        "Module exports `build_prompt(context: dict) -> str` that injects Stage 1 output",
+        "Module exports `build_prompt(context: StageContext, output_dir: str = \"threatmodel\") -> str` that injects Stage 1 output",
         "Tests cover: build_prompt with Stage 1 context injected",
         "Tests pass"
       ],
       "priority": 25,
       "passes": false,
-      "notes": "Depends on US-F03 (maestro package)."
+      "notes": "Depends on US-F03 (maestro package under frameworks/)."
     },
     {
       "id": "US-F26",
       "title": "MAESTRO Stage 3 prompt — Threat Identification",
       "description": "As a developer, I want a prompt template for the MAESTRO Threat Identification stage using MITRE ATLAS and OWASP LLM Top 10.",
       "acceptanceCriteria": [
-        "`src/threatsmith/prompts/maestro/stage_03_threat_identification.py` exports `STAGE_PROMPT` string constant",
+        "`src/threatsmith/frameworks/maestro/stage_03_threat_identification.py` exports `STAGE_PROMPT` string constant",
         "Prompt covers: systematic MITRE ATLAS technique analysis, prompt injection (direct and indirect), training data poisoning, model extraction and theft, model inversion, adversarial inputs, agent manipulation, supply chain attacks, information leakage, denial of service, unauthorized capability access",
         "Prompt references OWASP LLM Top 10 for coverage validation",
         "Prompt instructs the agent to write output to `threatmodel/03-threat-identification.md`",
-        "Module exports `build_prompt(context: dict) -> str` that injects Stages 1–2 outputs, MITRE ATLAS reference, and OWASP LLM Top 10",
+        "Module exports `build_prompt(context: StageContext, output_dir: str = \"threatmodel\") -> str` that injects Stages 1–2 outputs, MITRE ATLAS reference, and OWASP LLM Top 10 via `context.references`",
         "Tests cover: build_prompt with prior context, MITRE ATLAS reference appears in output, OWASP LLM Top 10 appears in output",
         "Tests pass"
       ],
       "priority": 26,
       "passes": false,
-      "notes": "Depends on US-F07 (MITRE ATLAS constants), US-F03 (maestro package)."
+      "notes": "Depends on US-F07 (MITRE ATLAS constants), US-F03 (maestro package under frameworks/)."
     },
     {
       "id": "US-F27",
       "title": "MAESTRO Stage 4 prompt — Vulnerability Analysis",
       "description": "As a developer, I want a prompt template for the MAESTRO Vulnerability Analysis stage focused on AI-specific vulnerabilities with scanner integration.",
       "acceptanceCriteria": [
-        "`src/threatsmith/prompts/maestro/stage_04_vulnerability_analysis.py` exports `STAGE_PROMPT` string constant",
+        "`src/threatsmith/frameworks/maestro/stage_04_vulnerability_analysis.py` exports `STAGE_PROMPT` string constant",
         "Prompt covers: input validation (prompts, user inputs, tool outputs), output filtering and constraints, agent guardrails (tool call scoping, rate limits, authorization), training pipeline security, model access controls, ML framework dependency analysis, scanner results integration",
         "Prompt instructs the agent to write output to `threatmodel/04-vulnerability-analysis.md`",
-        "Module exports `build_prompt(context: dict) -> str` that injects Stages 1–3 outputs and scanner context when present",
+        "Module exports `build_prompt(context: StageContext, output_dir: str = \"threatmodel\") -> str` that injects Stages 1–3 outputs and scanner context via `context.scanners_available` when present",
         "Tests cover: build_prompt with scanner context present, build_prompt without scanner context",
         "Tests pass"
       ],
       "priority": 27,
       "passes": false,
-      "notes": "Depends on US-F03 (maestro package)."
+      "notes": "Depends on US-F03 (maestro package under frameworks/)."
     },
     {
       "id": "US-F28",
       "title": "MAESTRO Stage 5 prompt — Attack Modeling",
       "description": "As a developer, I want a prompt template for the MAESTRO Attack Modeling stage with AI-specific attack trees and MITRE ATLAS mapping.",
       "acceptanceCriteria": [
-        "`src/threatsmith/prompts/maestro/stage_05_attack_modeling.py` exports `STAGE_PROMPT` string constant",
+        "`src/threatsmith/frameworks/maestro/stage_05_attack_modeling.py` exports `STAGE_PROMPT` string constant",
         "Prompt covers: Mermaid attack trees for high-priority AI threats, multi-stage attack paths chaining AI and traditional vulnerabilities, MITRE ATLAS technique mapping with tactic/technique IDs, feasibility assessment (attacker skill, access, tooling, cost), impact assessment",
         "Prompt instructs particular focus on attack paths traversing AI and non-AI components",
         "Prompt instructs the agent to write output to `threatmodel/05-attack-modeling.md`",
-        "Module exports `build_prompt(context: dict) -> str` that injects Stages 1–4 outputs and MITRE ATLAS reference",
+        "Module exports `build_prompt(context: StageContext, output_dir: str = \"threatmodel\") -> str` that injects Stages 1–4 outputs and MITRE ATLAS reference via `context.references`",
         "Tests cover: build_prompt with prior context and MITRE ATLAS reference appears in output",
         "Tests pass"
       ],
       "priority": 28,
       "passes": false,
-      "notes": "Depends on US-F07 (MITRE ATLAS constants), US-F03 (maestro package)."
+      "notes": "Depends on US-F07 (MITRE ATLAS constants), US-F03 (maestro package under frameworks/)."
     },
     {
       "id": "US-F29",
       "title": "MAESTRO Stage 6 prompt — Risk and Mitigation",
       "description": "As a developer, I want a prompt template for the MAESTRO Risk and Mitigation stage with AI-specific countermeasures and remediation roadmap.",
       "acceptanceCriteria": [
-        "`src/threatsmith/prompts/maestro/stage_06_risk_mitigation.py` exports `STAGE_PROMPT` string constant",
+        "`src/threatsmith/frameworks/maestro/stage_06_risk_mitigation.py` exports `STAGE_PROMPT` string constant",
         "Prompt covers: risk qualification per attack path, AI-specific countermeasures (input/output guardrails, prompt hardening, model access controls, training pipeline integrity, agent sandboxing, tool authorization, output content filtering, model monitoring and anomaly detection), traditional countermeasures in AI context, P0–P3 remediation roadmap with effort and risk reduction, residual risk assessment",
         "Prompt instructs the agent to write output to `threatmodel/06-risk-mitigation.md`",
-        "Module exports `build_prompt(context: dict) -> str` that injects Stages 1–5 outputs",
+        "Module exports `build_prompt(context: StageContext, output_dir: str = \"threatmodel\") -> str` that injects Stages 1–5 outputs",
         "Tests cover: build_prompt with prior stage context injected",
         "Tests pass"
       ],
       "priority": 29,
       "passes": false,
-      "notes": "Depends on US-F03 (maestro package)."
+      "notes": "Depends on US-F03 (maestro package under frameworks/)."
     },
     {
       "id": "US-F30",
       "title": "MAESTRO Stage 7 prompt — Report Consolidation",
       "description": "As a developer, I want a prompt template for the MAESTRO report consolidation step.",
       "acceptanceCriteria": [
-        "`src/threatsmith/prompts/maestro/stage_07_report.py` exports `STAGE_PROMPT` string constant",
+        "`src/threatsmith/frameworks/maestro/stage_07_report.py` exports `STAGE_PROMPT` string constant",
         "Prompt instructs consolidation of Stages 1–6 into a single AI security risk report with no new analysis",
         "Prompt instructs preservation of architecture diagrams, attack trees, MITRE ATLAS mappings, and remediation roadmap",
         "Prompt instructs the agent to write output to `threatmodel/07-report.md`",
-        "Module exports `build_prompt(context: dict) -> str` that injects Stages 1–6 outputs",
+        "Module exports `build_prompt(context: StageContext, output_dir: str = \"threatmodel\") -> str` that injects Stages 1–6 outputs",
         "Tests cover: build_prompt with all six stage outputs injected",
         "Tests pass"
       ],
       "priority": 30,
       "passes": false,
-      "notes": "Depends on US-F03 (maestro package)."
+      "notes": "Depends on US-F03 (maestro package under frameworks/)."
     },
     {
       "id": "US-F31",
       "title": "MAESTRO pack builder",
       "description": "As a developer, I want a pack builder function that assembles the MAESTRO framework pack.",
       "acceptanceCriteria": [
-        "`src/threatsmith/prompts/maestro/__init__.py` exports `build_maestro_pack() -> FrameworkPack`",
+        "`src/threatsmith/frameworks/maestro/__init__.py` exports `build_maestro_pack() -> FrameworkPack`",
         "Pack has `name=\"maestro\"` and `display_name=\"MAESTRO\"`",
         "Pack defines exactly 6 analysis stages and 1 report stage with correct output filenames and `build_prompt` references",
         "`scanner_stages` is `[4]`",

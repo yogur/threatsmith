@@ -10,6 +10,7 @@ from typing import Annotated
 import typer
 
 from threatsmith.engines import get_engine
+from threatsmith.frameworks import get_framework
 from threatsmith.orchestrator import Orchestrator
 from threatsmith.utils.logging import configure_logging
 from threatsmith.utils.metadata import generate_metadata, write_metadata
@@ -110,17 +111,16 @@ def main(
     write_metadata(abs_output_dir, metadata)
     logger.debug("Metadata written to: %s", abs_output_dir)
 
-    commit_hash = metadata.commit_hash
-
     # Run the pipeline
-    logger.info("Starting PASTA pipeline for: %s", path)
+    pack = get_framework("pasta")
+    logger.info("Starting %s pipeline for: %s", pack.display_name, path)
     engine_instance = get_engine(engine)
     orchestrator = Orchestrator(
         engine=engine_instance,
         repo_path=path,
+        pack=pack,
         output_dir=output_dir,
         scanner_info=scanner_info,
         user_objectives=user_objectives,
-        commit_hash=commit_hash,
     )
     raise SystemExit(orchestrator.run())

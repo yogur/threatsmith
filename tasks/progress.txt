@@ -1,3 +1,23 @@
+## 2026-03-19 - Architecture Restructure (Deliverable A)
+- Eliminated `src/threatsmith/prompts/` package entirely — all framework code now under `frameworks/`
+- Added `StageContext` generic dataclass to `frameworks/types.py`, replacing 8 per-stage typed context dataclasses
+- Migrated all 8 PASTA `build_prompt` functions from per-stage typed contexts to `StageContext`
+- Centralized OWASP reference injection: moved keyword detection from PASTA stage_04's `build_prompt` to the assembler via `evaluate_reference_conditions()` + `pack.reference_sets`
+- Moved assembler to `src/threatsmith/assembler.py` (top-level), rewrote as framework-agnostic: accepts `StageSpec` + `FrameworkPack`
+- Made orchestrator framework-agnostic: accepts `pack: FrameworkPack`, iterates `pack.stages + [pack.report_stage]`
+- Moved `prompts/references/` → `frameworks/references/`, `prompts/pasta/` → `frameworks/pasta/`
+- Updated `main.py` to call `get_framework("pasta")` and pass pack to orchestrator
+- Eliminated circular import between `frameworks/` and `prompts/` — clean DAG import graph
+- Updated all test imports to use `frameworks.*` paths
+- All 299 tests pass, lint and format clean
+- Files deleted: entire `src/threatsmith/prompts/` package (including `contexts.py`, `assembler.py`, `__init__.py`, all subpackages)
+- Files created: `src/threatsmith/assembler.py`, `src/threatsmith/frameworks/references/` (copied from prompts/references/), `src/threatsmith/frameworks/pasta/` (moved from prompts/pasta/)
+- **Learnings for future iterations:**
+  - Pack builders (`_pack.py`) import from `frameworks.types` directly (sibling), not from `frameworks/__init__` — this avoids cycles
+  - `StageContext.references` is a `list[str]` of pre-resolved reference strings; the assembler populates it from `pack.reference_sets` via `evaluate_reference_conditions()`
+  - No backward-compat layer for `prompts/` — clean break since this is pre-release
+---
+
 ## 2026-03-19 - US-F05
 - Created `src/threatsmith/prompts/references/stride_categories.py` exporting `STRIDE_CATEGORIES` string constant
 - Markdown table with bold full category names (e.g. `**Spoofing**`) — not split-bold like `**S**poofing`, which breaks substring tests
@@ -7,17 +27,32 @@
   - Use `**FullName**` markdown bold in table cells — splitting bold on the first letter (`**S**poofing`) breaks `assert "Spoofing" in constant` tests since the word is no longer a contiguous string
 ---
 
-## Codebase Patterns
-- `evaluate_reference_conditions(reference_config, prior_outputs)` in `prompts/references/__init__.py` is the canonical utility for conditional reference injection. Each entry in `reference_config` is a dict with `"condition"` and `"reference"` keys. Conditions: `always`, `api_detected`, `llm_detected`. The function searches all values in `prior_outputs` (case-insensitively combined) for keyword matches.
-- Keyword constants `API_KEYWORDS` and `LLM_KEYWORDS` in `prompts/references/__init__.py` are the authoritative keyword lists for framework pack reference injection conditions.
-- OWASP constants live in `prompts/references/owasp.py`; scanner snippet constants live in `prompts/references/scanner_snippets.py`. Do not import from the old top-level `prompts/owasp_references.py` or `prompts/scanner_snippets.py` — those files were removed in US-F03.
+## 2026-03-19 - US-F08
+- Moved all 8 PASTA stage modules from `prompts/` to `prompts/pasta/`
+- Implemented `build_pasta_pack()` in `prompts/pasta/__init__.py` with 7 analysis stages + report stage, `scanner_stages=[5]`, and `reference_sets` for stage 4 (OWASP Web always, API api_detected, LLM llm_detected)
+- Added backward-compat re-exports in `prompts/__init__.py` so `from threatsmith.prompts import stage_XX` still works
+- Updated `frameworks/_built_in.py` to call `build_pasta_pack()` instead of using placeholder stub
+- Updated test imports for all stage test files (`from threatsmith.prompts.pasta.stage_XX import ...`)
+- Files changed: `prompts/pasta/__init__.py`, `prompts/__init__.py`, `frameworks/_built_in.py`, all `prompts/pasta/stage_0*.py` (moved), all `tests/test_stage_*.py` (import paths updated)
+- **Learnings for future iterations:**
+  - `build_pasta_pack()` uses lazy imports for `FrameworkPack`/`StageSpec` inside the function body — if those imports were at module level, they'd trigger a circular import: `prompts.pasta` → `frameworks.models` → `frameworks.__init__` → `_built_in` → `prompts.pasta`
+  - `prompts/__init__.py` re-exports submodules as attributes; `from pkg import submodule` works if the module is an attribute, but `from pkg.submodule import X` requires the actual file path — backward compat re-exports only work for the `from pkg import submodule` form
+---
 
-- `frameworks/_built_in.py` registers placeholder packs for all four frameworks at import time; `frameworks/__init__.py` imports it to trigger registration. Later pack builder stories will replace these placeholders.
+## Codebase Patterns
+- **No circular imports**: Pack builders (`frameworks/pasta/_pack.py`) import from `frameworks.types` directly (sibling module), not from `frameworks/__init__`. This keeps the import graph a DAG: `frameworks/__init__` → `_built_in` → `frameworks.pasta._pack` → `frameworks.types`.
+- `evaluate_reference_conditions(reference_config, prior_outputs)` in `frameworks/references/conditions.py` (re-exported from `frameworks/references/__init__.py`) is the canonical utility for conditional reference injection. Each entry in `reference_config` is a dict with `"condition"` and `"reference"` keys. Conditions: `always`, `api_detected`, `llm_detected`. The function searches all values in `prior_outputs` (case-insensitively combined) for keyword matches.
+- Keyword constants `API_KEYWORDS` and `LLM_KEYWORDS` in `frameworks/references/conditions.py` are the authoritative keyword lists for framework pack reference injection conditions.
+- OWASP constants live in `frameworks/references/owasp.py`; scanner snippet constants live in `frameworks/references/scanner_snippets.py`.
+- The `prompts/` package has been deleted entirely — do not create or import from `threatsmith.prompts`.
+
+- `frameworks/_built_in.py` registers packs for all four frameworks at import time; `frameworks/__init__.py` imports it to trigger registration. PASTA uses `build_pasta_pack()` from `frameworks.pasta`; other frameworks use placeholder stubs until their stories are implemented.
 - `list_frameworks()` returns `list(_REGISTRY.values())` — order follows insertion order (dict in Python 3.7+).
 
-- Framework data model lives in `frameworks/models.py`; `frameworks/__init__.py` re-exports the public API. Keep `__init__.py` thin.
-- `_REGISTRY` is a module-level dict in `models.py`; tests use the `autouse` fixture to snapshot/restore it so registrations don't leak between tests.
+- Framework data model and `StageContext` live in `frameworks/types.py`; `frameworks/__init__.py` re-exports the public API. Keep `__init__.py` thin.
+- `_REGISTRY` is a module-level dict in `types.py`; tests use the `autouse` fixture to snapshot/restore it so registrations don't leak between tests.
 - `ruff` enforces E731 (no lambda assignments) — use `def` for named callables in tests.
+- All `build_prompt` functions use the generic `StageContext` dataclass — no per-stage typed contexts.
 
 ---
 

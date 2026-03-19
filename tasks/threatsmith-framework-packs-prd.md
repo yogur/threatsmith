@@ -76,6 +76,21 @@ class FrameworkPack:
     reference_sets: dict[int, list[str]]  # Stage number -> list of reference constant names
 ```
 
+```python
+@dataclass
+class StageContext:
+    """Generic context passed to any stage's build_prompt function."""
+    user_objectives: dict[str, str] | None = None
+    prior_outputs: dict[str, str] = field(default_factory=dict)
+    scanners_available: list[str] | None = None
+    references: list[str] = field(default_factory=list)
+```
+
+All `build_prompt` functions across all frameworks use the same `StageContext` dataclass:
+```python
+def build_prompt(context: StageContext, output_dir: str = "threatmodel") -> str:
+```
+
 The orchestrator iterates `pack.stages`, then runs `pack.report_stage`. It never references stage numbers or names directly — it follows the pack's definition.
 
 ### 2.2 Framework Registry
@@ -100,57 +115,43 @@ The CLI calls `get_framework(args.framework)` and passes the pack to the orchest
 
 ### 2.3 Directory Structure
 
-Prompt templates are organized by framework under a `prompts/` package:
+Framework code is organized under `frameworks/`. The assembler is a top-level module. The `prompts/` package has been eliminated.
 
 ```
 src/threatsmith/
-  prompts/
-    __init__.py
-    assembler.py                    # Framework-agnostic prompt assembly
-    references/
-      __init__.py
-      owasp.py                     # OWASP Web/API/LLM Top 10 (shared)
-      scanner_snippets.py          # Scanner instruction templates (shared)
-      linddun_catalogue.py         # LINDDUN threat type catalogue
-      mitre_atlas.py               # MITRE ATLAS techniques for AI systems
-      stride_categories.py         # STRIDE category definitions
-    stride_4q/
-      __init__.py                  # build_stride_4q_pack() function
-      stage_01_system_model.py
-      stage_02_threat_identification.py
-      stage_03_mitigations.py
-      stage_04_validation.py
-      stage_05_report.py
+  assembler.py                             # Framework-agnostic prompt assembly (top-level)
+  orchestrator.py                          # Framework-agnostic: iterates pack.stages
+  frameworks/
+    __init__.py                            # Public API: re-exports from types.py, triggers _built_in
+    types.py                               # FrameworkPack, StageSpec, StageContext, _REGISTRY, register/get/list
+    _built_in.py                           # Imports pack builders, calls register_framework()
+    references/                            # Shared reference constants
+      __init__.py                          # Re-exports evaluate_reference_conditions + keywords
+      conditions.py                        # evaluate_reference_conditions()
+      owasp.py                             # OWASP_WEB/API/LLM/MOBILE_TOP_10
+      scanner_snippets.py                  # SCANNER_SNIPPETS dict
+      stride_categories.py                 # STRIDE_CATEGORIES
+      linddun_catalogue.py                 # LINDDUN_THREAT_TYPES, LINDDUN_DFD_PATTERNS (new)
+      mitre_atlas.py                       # MITRE_ATLAS_TECHNIQUES (new)
     pasta/
-      __init__.py                  # build_pasta_pack() function
-      stage_01_objectives.py
-      stage_02_technical_scope.py
-      stage_03_decomposition.py
-      stage_04_threat_analysis.py
-      stage_05_vulnerability.py
-      stage_06_attack_modeling.py
-      stage_07_risk_impact.py
-      stage_08_report.py
+      __init__.py                          # Exports build_pasta_pack
+      _pack.py                             # build_pasta_pack() implementation
+      stage_01_objectives.py ... stage_08_report.py
+    stride_4q/
+      __init__.py                          # Exports build_stride_4q_pack
+      _pack.py                             # build_stride_4q_pack() implementation
+      stage_01_system_model.py ... stage_05_report.py
     linddun/
-      __init__.py                  # build_linddun_pack() function
-      stage_01_system_context.py
-      stage_02_data_flow.py
-      stage_03_threat_elicitation.py
-      stage_04_threat_prioritization.py
-      stage_05_mitigation.py
-      stage_06_report.py
+      __init__.py                          # Exports build_linddun_pack
+      _pack.py                             # build_linddun_pack() implementation
+      stage_01_system_context.py ... stage_06_report.py
     maestro/
-      __init__.py                  # build_maestro_pack() function
-      stage_01_ai_system_profiling.py
-      stage_02_architecture.py
-      stage_03_threat_identification.py
-      stage_04_vulnerability_analysis.py
-      stage_05_attack_modeling.py
-      stage_06_risk_mitigation.py
-      stage_07_report.py
+      __init__.py                          # Exports build_maestro_pack
+      _pack.py                             # build_maestro_pack() implementation
+      stage_01_ai_system_profiling.py ... stage_07_report.py
 ```
 
-Shared reference modules (`owasp.py`, `scanner_snippets.py`) remain at the `prompts/references/` level since they may be consumed by multiple frameworks. Framework-specific references (`linddun_catalogue.py`, `mitre_atlas.py`) are also at this level for consistency and potential cross-framework reuse.
+Shared reference modules (`owasp.py`, `scanner_snippets.py`) are at the `frameworks/references/` level since they may be consumed by multiple frameworks. Framework-specific references (`linddun_catalogue.py`, `mitre_atlas.py`) are also at this level for consistency and potential cross-framework reuse.
 
 ### 2.4 Scanner Integration Model
 
@@ -272,7 +273,7 @@ MAESTRO focuses on threats specific to AI and machine learning systems: model in
 
 ### 4.1 Existing (Relocated)
 
-The following constants move from `prompts/owasp_references.py` and `prompts/scanner_snippets.py` to `prompts/references/`:
+The following constants move from `prompts/owasp_references.py` and `prompts/scanner_snippets.py` to `frameworks/references/`:
 
 - `owasp.py`: `OWASP_WEB_TOP_10`, `OWASP_API_TOP_10`, `OWASP_LLM_TOP_10`, `OWASP_MOBILE_TOP_10`
 - `scanner_snippets.py`: `SEMGREP_SNIPPET`, `TRIVY_SNIPPET`, `GITLEAKS_SNIPPET`, `SCANNER_SNIPPETS`

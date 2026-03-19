@@ -5,7 +5,8 @@ Each framework registers itself here. Importing this module is sufficient to reg
 four frameworks.
 """
 
-from threatsmith.frameworks.models import FrameworkPack, StageSpec, register_framework
+from threatsmith.frameworks.pasta import build_pasta_pack
+from threatsmith.frameworks.types import FrameworkPack, StageSpec, register_framework
 
 
 def _placeholder_build_prompt(context: dict) -> str:  # pragma: no cover
@@ -34,18 +35,7 @@ register_framework(
     )
 )
 
-register_framework(
-    FrameworkPack(
-        name="pasta",
-        display_name="PASTA",
-        description=(
-            "Process for Attack Simulation and Threat Analysis. Full 7-stage "
-            "risk-centric analysis."
-        ),
-        stages=[],
-        report_stage=_placeholder_stage(8, "Report", "08-report.md"),
-    )
-)
+register_framework(build_pasta_pack())
 
 register_framework(
     FrameworkPack(

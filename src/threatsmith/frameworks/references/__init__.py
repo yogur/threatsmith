@@ -1,6 +1,6 @@
 """Shared reference constants and conditional injection utilities."""
 
-from threatsmith.prompts.references.conditions import (
+from threatsmith.frameworks.references.conditions import (
     API_KEYWORDS,
     LLM_KEYWORDS,
     MOBILE_KEYWORDS,

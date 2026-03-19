@@ -1,6 +1,6 @@
 """PASTA Stage 1 — Define Objectives prompt template."""
 
-from threatsmith.prompts.contexts import ObjectivesContext
+from threatsmith.frameworks.types import StageContext
 
 STAGE_PROMPT = """\
 You are a threat modeling analyst performing PASTA (Process for Attack Simulation \
@@ -165,20 +165,21 @@ business lens you establish here.
 """
 
 
-def build_prompt(context: ObjectivesContext, output_dir: str = "threatmodel") -> str:
+def build_prompt(context: StageContext, output_dir: str = "threatmodel") -> str:
     """Build the complete Stage 1 prompt with optional user-supplied objectives.
 
     Args:
-        context: ObjectivesContext with optional business_objectives and
-                 security_objectives strings from the user.
+        context: StageContext with optional user_objectives dict containing
+                 "business_objectives" and "security_objectives" strings.
         output_dir: Output directory for deliverables (defaults to "threatmodel").
                    Accepts with or without trailing slash.
 
     Returns:
         The fully assembled prompt string.
     """
-    business_objectives = context.business_objectives or None
-    security_objectives = context.security_objectives or None
+    objectives = context.user_objectives or {}
+    business_objectives = objectives.get("business_objectives") or None
+    security_objectives = objectives.get("security_objectives") or None
     normalized_dir = output_dir.rstrip("/") + "/"
 
     if business_objectives or security_objectives:

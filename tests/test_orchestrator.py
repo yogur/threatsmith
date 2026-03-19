@@ -1,4 +1,4 @@
-"""Tests for the Orchestrator class (US-016)."""
+"""Tests for the Orchestrator class."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import os
 from unittest.mock import MagicMock
 
 from threatsmith.engines.base import Engine
+from threatsmith.frameworks.pasta import build_pasta_pack
 from threatsmith.orchestrator import Orchestrator
 
 # ---------------------------------------------------------------------------
@@ -43,6 +44,10 @@ def _write_stage_files(output_dir: str, stages: list[int] | None = None) -> None
             fh.write(f"# Stage {i} output\nContent for stage {i}.\n")
 
 
+def _pasta():
+    return build_pasta_pack()
+
+
 # ---------------------------------------------------------------------------
 # Full pipeline success
 # ---------------------------------------------------------------------------
@@ -63,7 +68,10 @@ def test_run_full_pipeline_success(tmp_path):
     engine.execute.side_effect = execute_side_effect
 
     orch = Orchestrator(
-        engine=engine, repo_path=str(tmp_path), output_dir="threatmodel"
+        engine=engine,
+        repo_path=str(tmp_path),
+        pack=_pasta(),
+        output_dir="threatmodel",
     )
     result = orch.run()
 
@@ -85,7 +93,10 @@ def test_run_invokes_engine_with_repo_path(tmp_path):
     engine.execute.side_effect = execute_side_effect
 
     orch = Orchestrator(
-        engine=engine, repo_path=str(tmp_path), output_dir="threatmodel"
+        engine=engine,
+        repo_path=str(tmp_path),
+        pack=_pasta(),
+        output_dir="threatmodel",
     )
     orch.run()
 
@@ -115,7 +126,10 @@ def test_context_accumulates_across_stages(tmp_path):
     engine.execute.side_effect = execute_side_effect
 
     orch = Orchestrator(
-        engine=engine, repo_path=str(tmp_path), output_dir="threatmodel"
+        engine=engine,
+        repo_path=str(tmp_path),
+        pack=_pasta(),
+        output_dir="threatmodel",
     )
     orch.run()
 
@@ -144,7 +158,10 @@ def test_non_zero_exit_code_aborts_pipeline(tmp_path):
     engine = _make_engine(exit_code=1)
 
     orch = Orchestrator(
-        engine=engine, repo_path=str(tmp_path), output_dir="threatmodel"
+        engine=engine,
+        repo_path=str(tmp_path),
+        pack=_pasta(),
+        output_dir="threatmodel",
     )
 
     assert orch.run() == 1
@@ -155,7 +172,10 @@ def test_missing_output_file_aborts_pipeline(tmp_path):
     engine = _make_engine(exit_code=0)  # claims success but writes no files
 
     orch = Orchestrator(
-        engine=engine, repo_path=str(tmp_path), output_dir="threatmodel"
+        engine=engine,
+        repo_path=str(tmp_path),
+        pack=_pasta(),
+        output_dir="threatmodel",
     )
 
     assert orch.run() == 1
@@ -167,27 +187,24 @@ def test_pipeline_aborts_at_failing_stage(tmp_path):
 
     def execute_side_effect(prompt, working_directory, output_dir):
         call_count = engine.execute.call_count
-        # Fail stage 3
-        # With success for stages 1 and 2 each requiring 1 call,
-        # calls 1→stage1, 2→stage2, 3→stage3 (abort)
         if call_count <= 2:
-            # Stages 1 and 2 succeed
             _write_stage_files(
                 os.path.join(working_directory, output_dir), stages=[call_count]
             )
             return 0
-        # Stage 3 always fails
         return 1
 
     engine.execute.side_effect = execute_side_effect
 
     orch = Orchestrator(
-        engine=engine, repo_path=str(tmp_path), output_dir="threatmodel"
+        engine=engine,
+        repo_path=str(tmp_path),
+        pack=_pasta(),
+        output_dir="threatmodel",
     )
     result = orch.run()
 
     assert result == 1
-    # Stages 1, 2 succeed (1 call each) + stage 3 fails (1 call) = 3 calls total
     assert engine.execute.call_count == 3
 
 
@@ -211,7 +228,10 @@ def test_stage_messages_appear_in_log(tmp_path, caplog):
 
     with caplog.at_level(logging.INFO, logger="threatsmith.orchestrator"):
         orch = Orchestrator(
-            engine=engine, repo_path=str(tmp_path), output_dir="threatmodel"
+            engine=engine,
+            repo_path=str(tmp_path),
+            pack=_pasta(),
+            output_dir="threatmodel",
         )
         orch.run()
 
@@ -234,7 +254,10 @@ def test_context_size_only_in_debug_log(tmp_path, caplog):
 
     with caplog.at_level(logging.INFO, logger="threatsmith.orchestrator"):
         orch = Orchestrator(
-            engine=engine, repo_path=str(tmp_path), output_dir="threatmodel"
+            engine=engine,
+            repo_path=str(tmp_path),
+            pack=_pasta(),
+            output_dir="threatmodel",
         )
         orch.run()
 
@@ -260,7 +283,10 @@ def test_custom_output_dir(tmp_path):
     engine.execute.side_effect = execute_side_effect
 
     orch = Orchestrator(
-        engine=engine, repo_path=str(tmp_path), output_dir="custom_output"
+        engine=engine,
+        repo_path=str(tmp_path),
+        pack=_pasta(),
+        output_dir="custom_output",
     )
     result = orch.run()
 

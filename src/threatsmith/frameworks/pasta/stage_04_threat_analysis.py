@@ -1,12 +1,6 @@
 """PASTA Stage 4 — Threat Analysis prompt template."""
 
-from threatsmith.prompts.contexts import ThreatAnalysisContext
-from threatsmith.prompts.references.owasp import (
-    OWASP_API_TOP_10,
-    OWASP_LLM_TOP_10,
-    OWASP_MOBILE_TOP_10,
-    OWASP_WEB_TOP_10,
-)
+from threatsmith.frameworks.types import StageContext
 
 STAGE_PROMPT = """\
 You are a threat modeling analyst performing PASTA (Process for Attack Simulation \
@@ -275,37 +269,23 @@ threat identification here directly determines the quality of the entire downstr
 analysis.
 """
 
-# Keywords that trigger conditional OWASP variant injection
-_API_KEYWORDS = ["rest", "graphql", "grpc", "api gateway"]
-_LLM_KEYWORDS = ["langchain", "openai", "vector database", "llm"]
-_MOBILE_KEYWORDS = [
-    "android",
-    "ios",
-    "react native",
-    "flutter",
-    "swift",
-    "kotlin",
-    "mobile",
-]
 
-
-def build_prompt(
-    context: ThreatAnalysisContext, output_dir: str = "threatmodel"
-) -> str:
+def build_prompt(context: StageContext, output_dir: str = "threatmodel") -> str:
     """Build the complete Stage 4 prompt with prior stage injection and OWASP references.
 
     Args:
-        context: ThreatAnalysisContext with optional stage_01_output through
-                 stage_03_output markdown from prior stages.
+        context: StageContext with optional prior_outputs containing
+                 "stage_01_output" through "stage_03_output" markdown,
+                 and references list with pre-resolved OWASP reference strings.
         output_dir: Output directory for deliverables (defaults to "threatmodel").
                    Accepts with or without trailing slash.
 
     Returns:
         The fully assembled prompt string.
     """
-    stage_01_output = context.stage_01_output or None
-    stage_02_output = context.stage_02_output or None
-    stage_03_output = context.stage_03_output or None
+    stage_01_output = context.prior_outputs.get("stage_01_output") or None
+    stage_02_output = context.prior_outputs.get("stage_02_output") or None
+    stage_03_output = context.prior_outputs.get("stage_03_output") or None
     normalized_dir = output_dir.rstrip("/") + "/"
 
     # Build prior stages section
@@ -342,29 +322,20 @@ def build_prompt(
     else:
         prior_stages_section = ""
 
-    # Build OWASP section — Web Top 10 is always included
-    owasp_parts = [
-        "## OWASP COVERAGE CHECKLISTS\n",
-        "Use the following OWASP references as coverage validation checklists. For each "
-        "category, either map it to identified threats or explicitly document why it is "
-        "not applicable to this application.\n",
-        OWASP_WEB_TOP_10,
-    ]
+    # Build OWASP section from pre-resolved references
+    references = context.references or []
 
-    # Conditionally inject API and LLM variants based on Stage 2 content
-    if stage_02_output:
-        stage_02_lower = stage_02_output.lower()
-
-        if any(keyword in stage_02_lower for keyword in _API_KEYWORDS):
-            owasp_parts.append(OWASP_API_TOP_10)
-
-        if any(keyword in stage_02_lower for keyword in _LLM_KEYWORDS):
-            owasp_parts.append(OWASP_LLM_TOP_10)
-
-        if any(keyword in stage_02_lower for keyword in _MOBILE_KEYWORDS):
-            owasp_parts.append(OWASP_MOBILE_TOP_10)
-
-    owasp_section = "\n".join(owasp_parts)
+    if references:
+        owasp_parts = [
+            "## OWASP COVERAGE CHECKLISTS\n",
+            "Use the following OWASP references as coverage validation checklists. For each "
+            "category, either map it to identified threats or explicitly document why it is "
+            "not applicable to this application.\n",
+        ]
+        owasp_parts.extend(references)
+        owasp_section = "\n".join(owasp_parts)
+    else:
+        owasp_section = ""
 
     prompt = STAGE_PROMPT.replace("{prior_stages_section}", prior_stages_section)
     prompt = prompt.replace("{owasp_section}", owasp_section)

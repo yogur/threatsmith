@@ -1,4 +1,4 @@
-"""Tests for CLI interface (US-017)."""
+"""Tests for CLI interface."""
 
 from __future__ import annotations
 
@@ -20,10 +20,32 @@ def _make_mock_orchestrator(exit_code: int = 0):
     return mock_cls, mock_instance
 
 
+def _cli_patches(**overrides):
+    """Return a context manager stack for CLI test patches."""
+    defaults = {
+        "get_engine": patch("threatsmith.main.get_engine", return_value=MagicMock()),
+        "get_framework": patch(
+            "threatsmith.main.get_framework", return_value=MagicMock()
+        ),
+        "detect_scanners": patch(
+            "threatsmith.main.detect_scanners",
+            return_value={"available": [], "unavailable": []},
+        ),
+        "generate_metadata": patch(
+            "threatsmith.main.generate_metadata",
+            return_value=MagicMock(commit_hash="abc"),
+        ),
+        "write_metadata": patch("threatsmith.main.write_metadata"),
+    }
+    defaults.update(overrides)
+    return defaults
+
+
 def test_default_engine_is_claude_code(tmp_path):
     mock_cls, mock_instance = _make_mock_orchestrator()
     with (
         patch("threatsmith.main.get_engine") as mock_get_engine,
+        patch("threatsmith.main.get_framework", return_value=MagicMock()),
         patch("threatsmith.main.Orchestrator", mock_cls),
         patch(
             "threatsmith.main.detect_scanners",
@@ -44,6 +66,7 @@ def test_engine_option_codex(tmp_path):
     mock_cls, mock_instance = _make_mock_orchestrator()
     with (
         patch("threatsmith.main.get_engine") as mock_get_engine,
+        patch("threatsmith.main.get_framework", return_value=MagicMock()),
         patch("threatsmith.main.Orchestrator", mock_cls),
         patch(
             "threatsmith.main.detect_scanners",
@@ -65,6 +88,7 @@ def test_output_dir_created(tmp_path):
     output_dir = "my-threatmodel"
     with (
         patch("threatsmith.main.get_engine", return_value=MagicMock()),
+        patch("threatsmith.main.get_framework", return_value=MagicMock()),
         patch("threatsmith.main.Orchestrator", mock_cls),
         patch(
             "threatsmith.main.detect_scanners",
@@ -93,6 +117,7 @@ def test_metadata_written_before_pipeline(tmp_path):
 
     with (
         patch("threatsmith.main.get_engine", return_value=MagicMock()),
+        patch("threatsmith.main.get_framework", return_value=MagicMock()),
         patch("threatsmith.main.Orchestrator", mock_orchestrator_cls),
         patch(
             "threatsmith.main.detect_scanners",
@@ -121,6 +146,7 @@ def test_business_and_security_objectives_passed(tmp_path):
 
     with (
         patch("threatsmith.main.get_engine", return_value=MagicMock()),
+        patch("threatsmith.main.get_framework", return_value=MagicMock()),
         patch("threatsmith.main.Orchestrator", mock_cls),
         patch(
             "threatsmith.main.detect_scanners",
@@ -161,6 +187,7 @@ def test_verbose_flag_not_forwarded_to_orchestrator(tmp_path):
 
     with (
         patch("threatsmith.main.get_engine", return_value=MagicMock()),
+        patch("threatsmith.main.get_framework", return_value=MagicMock()),
         patch("threatsmith.main.Orchestrator", mock_cls),
         patch(
             "threatsmith.main.detect_scanners",
@@ -181,6 +208,7 @@ def test_detect_scanners_called(tmp_path):
     mock_cls, _ = _make_mock_orchestrator()
     with (
         patch("threatsmith.main.get_engine", return_value=MagicMock()),
+        patch("threatsmith.main.get_framework", return_value=MagicMock()),
         patch("threatsmith.main.Orchestrator", mock_cls),
         patch(
             "threatsmith.main.detect_scanners",
@@ -200,6 +228,7 @@ def test_pipeline_exit_code_propagated(tmp_path):
     mock_cls, mock_instance = _make_mock_orchestrator(exit_code=1)
     with (
         patch("threatsmith.main.get_engine", return_value=MagicMock()),
+        patch("threatsmith.main.get_framework", return_value=MagicMock()),
         patch("threatsmith.main.Orchestrator", mock_cls),
         patch(
             "threatsmith.main.detect_scanners",

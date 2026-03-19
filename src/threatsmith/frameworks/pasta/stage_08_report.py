@@ -1,6 +1,6 @@
 """Stage 8 — Report Consolidation prompt template (post-pipeline step)."""
 
-from threatsmith.prompts.contexts import ReportContext
+from threatsmith.frameworks.types import StageContext
 
 STAGE_PROMPT = """\
 You are a technical report editor performing the final consolidation step of a \
@@ -134,25 +134,25 @@ collection of AI agent outputs
 """
 
 
-def build_prompt(context: ReportContext, output_dir: str = "threatmodel") -> str:
+def build_prompt(context: StageContext, output_dir: str = "threatmodel") -> str:
     """Build the complete Stage 8 prompt with prior stage injection.
 
     Args:
-        context: ReportContext with optional stage_01_output through
-                 stage_07_output markdown from prior stages.
+        context: StageContext with optional prior_outputs containing
+                 "stage_01_output" through "stage_07_output" markdown.
         output_dir: Output directory for deliverables (defaults to "threatmodel").
                    Accepts with or without trailing slash.
 
     Returns:
         The fully assembled prompt string.
     """
-    stage_01_output = context.stage_01_output or None
-    stage_02_output = context.stage_02_output or None
-    stage_03_output = context.stage_03_output or None
-    stage_04_output = context.stage_04_output or None
-    stage_05_output = context.stage_05_output or None
-    stage_06_output = context.stage_06_output or None
-    stage_07_output = context.stage_07_output or None
+    stage_01_output = context.prior_outputs.get("stage_01_output") or None
+    stage_02_output = context.prior_outputs.get("stage_02_output") or None
+    stage_03_output = context.prior_outputs.get("stage_03_output") or None
+    stage_04_output = context.prior_outputs.get("stage_04_output") or None
+    stage_05_output = context.prior_outputs.get("stage_05_output") or None
+    stage_06_output = context.prior_outputs.get("stage_06_output") or None
+    stage_07_output = context.prior_outputs.get("stage_07_output") or None
     normalized_dir = output_dir.rstrip("/") + "/"
 
     # Build prior stages section

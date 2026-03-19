@@ -1,6 +1,6 @@
 """PASTA Stage 6 — Attack Modeling prompt template."""
 
-from threatsmith.prompts.contexts import AttackModelingContext
+from threatsmith.frameworks.types import StageContext
 
 STAGE_PROMPT = """\
 You are an attack modeling analyst performing PASTA (Process for Attack Simulation \
@@ -336,25 +336,23 @@ or hypothetical ones.
 """
 
 
-def build_prompt(
-    context: AttackModelingContext, output_dir: str = "threatmodel"
-) -> str:
+def build_prompt(context: StageContext, output_dir: str = "threatmodel") -> str:
     """Build the complete Stage 6 prompt with prior stage injection.
 
     Args:
-        context: AttackModelingContext with optional stage_01_output through
-                 stage_05_output markdown from prior stages.
+        context: StageContext with optional prior_outputs containing
+                 "stage_01_output" through "stage_05_output" markdown.
         output_dir: Output directory for deliverables (defaults to "threatmodel").
                    Accepts with or without trailing slash.
 
     Returns:
         The fully assembled prompt string.
     """
-    stage_01_output = context.stage_01_output or None
-    stage_02_output = context.stage_02_output or None
-    stage_03_output = context.stage_03_output or None
-    stage_04_output = context.stage_04_output or None
-    stage_05_output = context.stage_05_output or None
+    stage_01_output = context.prior_outputs.get("stage_01_output") or None
+    stage_02_output = context.prior_outputs.get("stage_02_output") or None
+    stage_03_output = context.prior_outputs.get("stage_03_output") or None
+    stage_04_output = context.prior_outputs.get("stage_04_output") or None
+    stage_05_output = context.prior_outputs.get("stage_05_output") or None
     normalized_dir = output_dir.rstrip("/") + "/"
 
     # Build prior stages section

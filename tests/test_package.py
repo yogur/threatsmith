@@ -27,8 +27,8 @@ def test_engine_execute_signature():
     assert "working_directory" in params
 
 
-def test_prompts_package():
-    import threatsmith.prompts  # noqa: F401
+def test_frameworks_package():
+    import threatsmith.frameworks  # noqa: F401
 
 
 def test_utils_package():
