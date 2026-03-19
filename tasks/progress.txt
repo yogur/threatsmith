@@ -15,6 +15,20 @@
 - All `build_prompt` functions use the generic `StageContext` dataclass — no per-stage typed contexts.
 ---
 
+## 2026-03-19 - US-F14
+- Created `src/threatsmith/frameworks/stride_4q/stage_04_validation.py` with `STAGE_PROMPT` constant and `build_prompt` function
+- Prompt validates completeness and quality of the threat model from Stages 1–3
+- Prompt covers: component coverage verification, STRIDE category coverage verification, mitigation completeness for high-priority threats, remaining gaps, accepted risks with justification, recommended next steps and review cadence
+- Prompt references the Four Question Framework ("Did we do a good job?")
+- Prompt injects Stages 1–3 outputs via `{prior_stages_section}` placeholder with XML-delimited `<stage_01_system_model>`, `<stage_02_threat_identification>`, and `<stage_03_mitigations>` tags
+- Prompt writes output to `threatmodel/04-validation.md`
+- Created `tests/stride_4q/test_stage_04_validation.py` with 25 tests: all three prior stages injected, each stage independently, absent/empty prior outputs, only stage 01/03 present, output file path, custom output dir, trailing slash normalization, placeholder absence, 4QF context, content coverage (component coverage, STRIDE coverage, mitigation completeness, remaining gaps, accepted risks, review cadence, next steps)
+- Files changed: `src/threatsmith/frameworks/stride_4q/stage_04_validation.py` (new), `tests/stride_4q/test_stage_04_validation.py` (new)
+- **Learnings for future iterations:**
+  - Stage 4 uses only `{prior_stages_section}` and `{output_dir}` placeholders — no references or scanners (same as Stage 3)
+  - Three-stage prior output injection: each of the three stages gets its own XML tag within `<prior_stages>`, each independently optional
+---
+
 ## 2026-03-19 - US-F13
 - Created `src/threatsmith/frameworks/stride_4q/stage_03_mitigations.py` with `STAGE_PROMPT` constant and `build_prompt` function
 - Prompt covers countermeasure identification per threat, existing controls assessment, gap analysis, implementation recommendations with effort estimates (Low/Medium/High), priority ranking (P0–P3), and residual risk assessment
