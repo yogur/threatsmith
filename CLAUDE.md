@@ -79,7 +79,7 @@ Pack builders import from `frameworks.types` directly (sibling module), not from
 
 ## Testing Patterns
 
-- Tests are in `tests/` at root level. Test files mirror source: `test_stage_04.py` tests `frameworks/pasta/stage_04_threat_analysis.py`.
+- Tests are in `tests/` at root level. PASTA stage tests live in `tests/pasta/` (e.g. `tests/pasta/test_stage_04.py` tests `frameworks/pasta/stage_04_threat_analysis.py`). Framework-specific tests for other frameworks follow the same pattern: `tests/<framework>/`.
 - Do not write tests for string constants — test logic and behavior only.
 - **Mock engine in E2E tests**: Use a closure over `output_dir` in `execute_side_effect(prompt, working_directory)` to write stage files. Track call count with `{"n": 0}` dict.
 - **Patch location for CLI tests**: Patch `threatsmith.main.get_engine` and `threatsmith.main.get_framework` (not the module-level imports) since the CLI imports into its own namespace.
