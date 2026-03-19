@@ -15,6 +15,21 @@
 - All `build_prompt` functions use the generic `StageContext` dataclass — no per-stage typed contexts.
 ---
 
+## 2026-03-19 - US-F12
+- Created `src/threatsmith/frameworks/stride_4q/stage_02_threat_identification.py` with `STAGE_PROMPT` constant and `build_prompt` function
+- Prompt performs systematic STRIDE analysis across all Stage 1 components with attacker motivation and capability context
+- Prompt references OWASP Top 10 as a coverage checklist via `context.references`
+- Prompt integrates scanner results via `context.scanners_available` when present
+- Prompt references the Four Question Framework ("What can go wrong?")
+- Prompt writes output to `threatmodel/02-threat-identification.md`
+- Created `tests/stride_4q/test_stage_02_threat_identification.py` with 20 tests: all context types, STRIDE reference injection, OWASP reference injection, scanner present/absent/empty, prior stage injection/absent/empty, references absent/empty, output file path, custom output dir, trailing slash normalization, placeholder absence, 4QF context, multiple scanners
+- Files changed: `src/threatsmith/frameworks/stride_4q/stage_02_threat_identification.py` (new), `tests/stride_4q/test_stage_02_threat_identification.py` (new)
+- **Learnings for future iterations:**
+  - Stage 2 uses three placeholders: `{prior_stages_section}`, `{references_section}`, `{scanner_section}` — follows same `.replace()` pattern as PASTA stages
+  - References are injected via `context.references` (pre-resolved by assembler); scanners via `context.scanners_available` with `SCANNER_SNIPPETS` lookup — same pattern as PASTA stage 5
+  - Stage 2 is the scanner stage for 4QF+STRIDE (`scanner_stages=[2]` in pack config US-F16)
+---
+
 ## 2026-03-19 - US-F11
 - Created `src/threatsmith/frameworks/stride_4q/stage_01_system_model.py` with `STAGE_PROMPT` constant and `build_prompt` function
 - Prompt covers all 8 analysis areas from the acceptance criteria: application purpose/scope, technology stack, data flows, actors/assets, trust boundaries, entry points, external dependencies, deployment context

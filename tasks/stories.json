@@ -214,8 +214,8 @@
         "Tests pass"
       ],
       "priority": 12,
-      "passes": false,
-      "notes": "Depends on US-F05 (STRIDE categories), US-F11 (stage 1 for context shape reference)."
+      "passes": true,
+      "notes": "stage_02_threat_identification.py with STAGE_PROMPT and build_prompt; systematic STRIDE analysis per component with attacker motivation/capability context; OWASP coverage checklist; scanner integration; 20 tests in tests/stride_4q/"
     },
     {
       "id": "US-F13",
