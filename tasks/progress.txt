@@ -15,6 +15,22 @@
 - All `build_prompt` functions use the generic `StageContext` dataclass — no per-stage typed contexts.
 ---
 
+## 2026-03-19 - US-F15
+- Created `src/threatsmith/frameworks/stride_4q/stage_05_report.py` with `STAGE_PROMPT` constant and `build_prompt` function
+- Prompt consolidates Stages 1–4 into a single executive report with no new analysis
+- Prompt preserves Mermaid diagrams, threat tables, mitigation recommendations, gap assessments, accepted risks
+- Prompt includes executive summary with scope, critical findings, top risks, key mitigations, validation outcome, overall risk posture
+- Prompt includes content cleanup rules (conversational artifacts, heading normalization, deduplication)
+- Prompt writes output to `threatmodel/05-report.md`
+- Injects Stages 1–4 via `{prior_stages_section}` placeholder with XML-delimited tags: `<stage_01_system_model>`, `<stage_02_threat_identification>`, `<stage_03_mitigations>`, `<stage_04_validation>`
+- Created `tests/stride_4q/test_stage_05_report.py` with 30 tests: all four stages injected, each stage independently, absent/empty prior outputs, output file path, custom output dir, trailing slash normalization, placeholder absence, no-new-analysis, consolidation, stage names, heading normalization, content preservation, 4QF+STRIDE mention
+- Files changed: `src/threatsmith/frameworks/stride_4q/stage_05_report.py` (new), `tests/stride_4q/test_stage_05_report.py` (new)
+- **Learnings for future iterations:**
+  - Report stages follow the PASTA stage_08_report pattern: no references or scanners, only `{prior_stages_section}` and `{output_dir}` placeholders
+  - Report stages use `any([...])` pattern (not `if x or y or z`) for checking multiple prior outputs
+  - XML tag names in report stages match the stage names (e.g. `<stage_04_validation>` not `<stage_04_output>`)
+---
+
 ## 2026-03-19 - US-F14
 - Created `src/threatsmith/frameworks/stride_4q/stage_04_validation.py` with `STAGE_PROMPT` constant and `build_prompt` function
 - Prompt validates completeness and quality of the threat model from Stages 1–3

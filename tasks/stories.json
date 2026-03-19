@@ -263,8 +263,8 @@
         "Tests pass"
       ],
       "priority": 15,
-      "passes": false,
-      "notes": "Depends on US-F03 (stride_4q package under frameworks/)."
+      "passes": true,
+      "notes": "stage_05_report.py with STAGE_PROMPT and build_prompt; consolidates Stages 1–4 into single executive report; preserves Mermaid diagrams, threat tables, mitigation recommendations; no new analysis; 30 tests in tests/stride_4q/"
     },
     {
       "id": "US-F16",
