@@ -153,20 +153,6 @@ def main(
         "security_objectives": security_objectives,
     }
 
-    # Generate and write metadata before starting the pipeline
-    metadata = generate_metadata(
-        engine_name=engine,
-        framework_name=pack.name,
-        scanners_available=scanner_info["available"],
-        scanners_unavailable=scanner_info["unavailable"],
-        user_objectives={
-            "business": business_objectives,
-            "security": security_objectives,
-        },
-    )
-    write_metadata(abs_output_dir, metadata)
-    logger.debug("Metadata written to: %s", abs_output_dir)
-
     # Run the pipeline
     logger.info("Starting %s pipeline for: %s", pack.display_name, path)
     engine_instance = get_engine(engine)
@@ -178,4 +164,21 @@ def main(
         scanner_info=scanner_info,
         user_objectives=user_objectives,
     )
-    raise SystemExit(orchestrator.run())
+    exit_code = orchestrator.run()
+
+    # Generate and write metadata after the pipeline so stages_completed is accurate
+    metadata = generate_metadata(
+        engine_name=engine,
+        framework=pack,
+        scanners_available=scanner_info["available"],
+        scanners_unavailable=scanner_info["unavailable"],
+        stages_completed=orchestrator.stages_completed,
+        user_objectives={
+            "business": business_objectives,
+            "security": security_objectives,
+        },
+    )
+    write_metadata(abs_output_dir, metadata)
+    logger.debug("Metadata written to: %s", abs_output_dir)
+
+    raise SystemExit(exit_code)

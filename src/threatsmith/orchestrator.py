@@ -25,6 +25,11 @@ class Orchestrator:
     user_objectives: dict | None = None
     _prior_outputs: dict[str, str] = field(default_factory=dict, init=False)
 
+    @property
+    def stages_completed(self) -> int:
+        """Number of pipeline stages that completed successfully."""
+        return len(self._prior_outputs)
+
     def _output_file_path(self, filename: str) -> str:
         """Absolute path to a deliverable file within the repo's output directory."""
         return os.path.join(self.repo_path, self.output_dir, filename)

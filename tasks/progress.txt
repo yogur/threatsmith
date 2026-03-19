@@ -15,6 +15,20 @@
 - All `build_prompt` functions use the generic `StageContext` dataclass — no per-stage typed contexts.
 ---
 
+## 2026-03-19 - US-F33
+- Added `framework_display_name: str` and `stages_completed: int` to `ThreatSmithMetadata`
+- Changed `generate_metadata` signature: `framework_name: str` → `framework: FrameworkPack`; added `stages_completed: int = 0` param
+- Added `stages_completed` property to `Orchestrator` (returns `len(self._prior_outputs)`)
+- Moved metadata write in `main.py` to AFTER `orchestrator.run()` so `stages_completed` reflects actual completed stages
+- Updated test for ordering: `test_metadata_written_before_pipeline` → `test_metadata_written_after_pipeline`
+- Deferred: framework mismatch warning when resuming/re-running (per user instruction)
+- Files changed: `src/threatsmith/utils/metadata.py`, `src/threatsmith/orchestrator.py`, `src/threatsmith/main.py`, `tests/test_metadata.py`, `tests/test_cli.py`, `tests/test_e2e.py`
+- **Learnings for future iterations:**
+  - `generate_metadata` now imports `FrameworkPack` from `frameworks.types` — no circular import since `frameworks.types` doesn't import `utils.metadata`
+  - `stages_completed` is derived from `len(orchestrator._prior_outputs)` via the `stages_completed` property — one entry per successfully completed stage
+  - Metadata is written AFTER the pipeline run (not before) to capture accurate `stages_completed`
+---
+
 ## 2026-03-19 - US-F32
 - Added `--framework` option to CLI (default `stride-4q`, resolved from `.threatsmith.yml` config when not explicitly passed)
 - Added `--list-frameworks` flag that prints all registered framework names/descriptions and exits 0

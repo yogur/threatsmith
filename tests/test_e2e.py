@@ -28,6 +28,8 @@ _REQUIRED_METADATA_FIELDS = [
     "threatsmith_version",
     "engine",
     "framework",
+    "framework_display_name",
+    "stages_completed",
     "commit_hash",
     "branch",
     "timestamp",

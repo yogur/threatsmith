@@ -3,11 +3,15 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
+from threatsmith.frameworks import get_framework
 from threatsmith.utils.metadata import (
     ThreatSmithMetadata,
     generate_metadata,
     write_metadata,
 )
+
+_FRAMEWORK = get_framework("stride-4q")
+_PASTA_FRAMEWORK = get_framework("pasta")
 
 
 def test_generate_metadata_returns_all_required_fields():
@@ -21,7 +25,7 @@ def test_generate_metadata_returns_all_required_fields():
 
         metadata = generate_metadata(
             engine_name="claude-code",
-            framework_name="stride-4q",
+            framework=_FRAMEWORK,
             scanners_available=["semgrep", "trivy"],
             scanners_unavailable=["gitleaks"],
             user_objectives={"business": "Assess web app security"},
@@ -60,7 +64,7 @@ def test_generate_metadata_captures_engine_name():
 
         metadata = generate_metadata(
             engine_name="codex",
-            framework_name="pasta",
+            framework=_PASTA_FRAMEWORK,
             scanners_available=[],
             scanners_unavailable=[],
         )
@@ -78,7 +82,7 @@ def test_generate_metadata_captures_scanners():
 
         metadata = generate_metadata(
             engine_name="claude-code",
-            framework_name="stride-4q",
+            framework=_FRAMEWORK,
             scanners_available=["trivy", "semgrep"],
             scanners_unavailable=["gitleaks"],
         )
@@ -101,7 +105,7 @@ def test_generate_metadata_captures_user_objectives():
         }
         metadata = generate_metadata(
             engine_name="claude-code",
-            framework_name="stride-4q",
+            framework=_FRAMEWORK,
             scanners_available=[],
             scanners_unavailable=[],
             user_objectives=objectives,
@@ -121,7 +125,7 @@ def test_generate_metadata_handles_git_failures():
 
         metadata = generate_metadata(
             engine_name="claude-code",
-            framework_name="stride-4q",
+            framework=_FRAMEWORK,
             scanners_available=[],
             scanners_unavailable=[],
         )
@@ -140,7 +144,7 @@ def test_generate_metadata_timestamp_is_iso8601():
 
         metadata = generate_metadata(
             engine_name="claude-code",
-            framework_name="stride-4q",
+            framework=_FRAMEWORK,
             scanners_available=[],
             scanners_unavailable=[],
         )
@@ -158,6 +162,8 @@ def test_write_metadata_creates_json_file():
             threatsmith_version="0.2.0",
             engine="claude-code",
             framework="stride-4q",
+            framework_display_name="4QF + STRIDE",
+            stages_completed=5,
             commit_hash="abc123",
             branch="main",
             timestamp="2026-03-13T12:00:00+00:00",
@@ -189,6 +195,8 @@ def test_write_metadata_creates_directory_if_needed():
             threatsmith_version="0.2.0",
             engine="claude-code",
             framework="stride-4q",
+            framework_display_name="4QF + STRIDE",
+            stages_completed=0,
             commit_hash="hash",
             branch="branch",
             timestamp="2026-03-13T12:00:00+00:00",
@@ -213,7 +221,7 @@ def test_generate_metadata_json_serializable():
 
         metadata = generate_metadata(
             engine_name="claude-code",
-            framework_name="stride-4q",
+            framework=_FRAMEWORK,
             scanners_available=["trivy"],
             scanners_unavailable=["semgrep"],
             user_objectives={"business": "objectives"},
@@ -234,9 +242,104 @@ def test_generate_metadata_no_objectives_defaults_to_empty_dict():
 
         metadata = generate_metadata(
             engine_name="claude-code",
-            framework_name="stride-4q",
+            framework=_FRAMEWORK,
             scanners_available=[],
             scanners_unavailable=[],
         )
 
         assert metadata.user_objectives == {}
+
+
+def test_generate_metadata_framework_name_from_pack():
+    """Test that generate_metadata records the framework pack name."""
+    with patch("subprocess.run") as mock_run:
+        mock_run.side_effect = [
+            type("obj", (object,), {"stdout": "hash\n", "returncode": 0})(),
+            type("obj", (object,), {"stdout": "br\n", "returncode": 0})(),
+        ]
+
+        metadata = generate_metadata(
+            engine_name="claude-code",
+            framework=_FRAMEWORK,
+            scanners_available=[],
+            scanners_unavailable=[],
+        )
+
+        assert metadata.framework == "stride-4q"
+
+
+def test_generate_metadata_framework_display_name_from_pack():
+    """Test that generate_metadata records the framework display name."""
+    with patch("subprocess.run") as mock_run:
+        mock_run.side_effect = [
+            type("obj", (object,), {"stdout": "hash\n", "returncode": 0})(),
+            type("obj", (object,), {"stdout": "br\n", "returncode": 0})(),
+        ]
+
+        metadata = generate_metadata(
+            engine_name="claude-code",
+            framework=_FRAMEWORK,
+            scanners_available=[],
+            scanners_unavailable=[],
+        )
+
+        assert metadata.framework_display_name == "4QF + STRIDE"
+
+
+def test_generate_metadata_stages_completed_default_zero():
+    """Test that stages_completed defaults to 0."""
+    with patch("subprocess.run") as mock_run:
+        mock_run.side_effect = [
+            type("obj", (object,), {"stdout": "hash\n", "returncode": 0})(),
+            type("obj", (object,), {"stdout": "br\n", "returncode": 0})(),
+        ]
+
+        metadata = generate_metadata(
+            engine_name="claude-code",
+            framework=_FRAMEWORK,
+            scanners_available=[],
+            scanners_unavailable=[],
+        )
+
+        assert metadata.stages_completed == 0
+
+
+def test_generate_metadata_stages_completed_explicit():
+    """Test that stages_completed is recorded correctly when passed explicitly."""
+    with patch("subprocess.run") as mock_run:
+        mock_run.side_effect = [
+            type("obj", (object,), {"stdout": "hash\n", "returncode": 0})(),
+            type("obj", (object,), {"stdout": "br\n", "returncode": 0})(),
+        ]
+
+        metadata = generate_metadata(
+            engine_name="claude-code",
+            framework=_FRAMEWORK,
+            scanners_available=[],
+            scanners_unavailable=[],
+            stages_completed=5,
+        )
+
+        assert metadata.stages_completed == 5
+
+
+def test_generate_metadata_framework_and_display_name_in_json():
+    """Test that framework and framework_display_name appear in serialized JSON."""
+    with patch("subprocess.run") as mock_run:
+        mock_run.side_effect = [
+            type("obj", (object,), {"stdout": "hash\n", "returncode": 0})(),
+            type("obj", (object,), {"stdout": "br\n", "returncode": 0})(),
+        ]
+
+        metadata = generate_metadata(
+            engine_name="claude-code",
+            framework=_PASTA_FRAMEWORK,
+            scanners_available=[],
+            scanners_unavailable=[],
+            stages_completed=8,
+        )
+
+        d = metadata.to_dict()
+        assert d["framework"] == "pasta"
+        assert d["framework_display_name"] == "PASTA"
+        assert d["stages_completed"] == 8

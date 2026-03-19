@@ -104,12 +104,13 @@ def test_output_dir_created(tmp_path):
     assert os.path.isdir(tmp_path / output_dir)
 
 
-def test_metadata_written_before_pipeline(tmp_path):
-    """write_metadata is called before orchestrator.run()."""
+def test_metadata_written_after_pipeline(tmp_path):
+    """write_metadata is called after orchestrator.run() so stages_completed is accurate."""
     call_order = []
 
     mock_orchestrator_instance = MagicMock()
     mock_orchestrator_instance.run.side_effect = lambda: call_order.append("run") or 0
+    mock_orchestrator_instance.stages_completed = 5
     mock_orchestrator_cls = MagicMock(return_value=mock_orchestrator_instance)
 
     def fake_write_metadata(*args, **kwargs):
@@ -131,7 +132,7 @@ def test_metadata_written_before_pipeline(tmp_path):
     ):
         runner.invoke(app, [str(tmp_path)])
 
-    assert call_order.index("write_metadata") < call_order.index("run")
+    assert call_order.index("run") < call_order.index("write_metadata")
 
 
 def test_business_and_security_objectives_passed(tmp_path):

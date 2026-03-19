@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from threatsmith import __version__
+from threatsmith.frameworks.types import FrameworkPack
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +17,8 @@ class ThreatSmithMetadata:
     threatsmith_version: str
     engine: str
     framework: str
+    framework_display_name: str
+    stages_completed: int
     commit_hash: str
     branch: str
     timestamp: str
@@ -29,9 +32,10 @@ class ThreatSmithMetadata:
 
 def generate_metadata(
     engine_name: str,
-    framework_name: str,
+    framework: FrameworkPack,
     scanners_available: list[str],
     scanners_unavailable: list[str],
+    stages_completed: int = 0,
     user_objectives: dict | None = None,
 ) -> ThreatSmithMetadata:
     """
@@ -39,15 +43,16 @@ def generate_metadata(
 
     Args:
         engine_name: Name of the AI engine used (e.g., 'claude-code', 'codex')
-        framework_name: Identifier of the framework pack used (e.g., 'stride-4q', 'pasta')
+        framework: The FrameworkPack used for this run
         scanners_available: List of available scanner names
         scanners_unavailable: List of unavailable scanner names
+        stages_completed: Number of pipeline stages that completed successfully
         user_objectives: Optional dict with 'business' and/or 'security' keys
 
     Returns:
-        ThreatSmithMetadata dataclass with threatsmith_version, engine, commit_hash,
-        branch, timestamp (ISO 8601), scanners_available, scanners_unavailable,
-        and user_objectives
+        ThreatSmithMetadata dataclass with threatsmith_version, engine, framework,
+        framework_display_name, stages_completed, commit_hash, branch, timestamp
+        (ISO 8601), scanners_available, scanners_unavailable, and user_objectives
     """
     # Get commit hash
     try:
@@ -77,7 +82,9 @@ def generate_metadata(
     return ThreatSmithMetadata(
         threatsmith_version=__version__,
         engine=engine_name,
-        framework=framework_name,
+        framework=framework.name,
+        framework_display_name=framework.display_name,
+        stages_completed=stages_completed,
         commit_hash=commit_hash,
         branch=branch,
         timestamp=timestamp,

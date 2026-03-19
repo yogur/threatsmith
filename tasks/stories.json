@@ -565,8 +565,8 @@
         "Tests pass"
       ],
       "priority": 33,
-      "passes": false,
-      "notes": "Depends on US-F01 (FrameworkPack), US-F32 (CLI provides framework to metadata)."
+      "passes": true,
+      "notes": "Added framework_display_name and stages_completed to ThreatSmithMetadata; generate_metadata now accepts framework: FrameworkPack; metadata written after pipeline run so stages_completed is accurate; mismatch warning deferred per user note."
     },
     {
       "id": "US-F34",
