@@ -13,6 +13,7 @@ from threatsmith.frameworks.pasta import (
 from threatsmith.frameworks.references.owasp import (
     OWASP_API_TOP_10,
     OWASP_LLM_TOP_10,
+    OWASP_MOBILE_TOP_10,
     OWASP_WEB_TOP_10,
 )
 from threatsmith.frameworks.types import FrameworkPack, StageSpec
@@ -83,6 +84,7 @@ def build_pasta_pack() -> FrameworkPack:
                 {"condition": "always", "reference": OWASP_WEB_TOP_10},
                 {"condition": "api_detected", "reference": OWASP_API_TOP_10},
                 {"condition": "llm_detected", "reference": OWASP_LLM_TOP_10},
+                {"condition": "mobile_detected", "reference": OWASP_MOBILE_TOP_10},
             ]
         },
     )
