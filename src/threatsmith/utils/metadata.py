@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 class ThreatSmithMetadata:
     threatsmith_version: str
     engine: str
+    framework: str
     commit_hash: str
     branch: str
     timestamp: str
@@ -28,6 +29,7 @@ class ThreatSmithMetadata:
 
 def generate_metadata(
     engine_name: str,
+    framework_name: str,
     scanners_available: list[str],
     scanners_unavailable: list[str],
     user_objectives: dict | None = None,
@@ -37,6 +39,7 @@ def generate_metadata(
 
     Args:
         engine_name: Name of the AI engine used (e.g., 'claude-code', 'codex')
+        framework_name: Identifier of the framework pack used (e.g., 'stride-4q', 'pasta')
         scanners_available: List of available scanner names
         scanners_unavailable: List of unavailable scanner names
         user_objectives: Optional dict with 'business' and/or 'security' keys
@@ -74,6 +77,7 @@ def generate_metadata(
     return ThreatSmithMetadata(
         threatsmith_version=__version__,
         engine=engine_name,
+        framework=framework_name,
         commit_hash=commit_hash,
         branch=branch,
         timestamp=timestamp,

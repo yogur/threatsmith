@@ -21,6 +21,7 @@ def test_generate_metadata_returns_all_required_fields():
 
         metadata = generate_metadata(
             engine_name="claude-code",
+            framework_name="stride-4q",
             scanners_available=["semgrep", "trivy"],
             scanners_unavailable=["gitleaks"],
             user_objectives={"business": "Assess web app security"},
@@ -59,6 +60,7 @@ def test_generate_metadata_captures_engine_name():
 
         metadata = generate_metadata(
             engine_name="codex",
+            framework_name="pasta",
             scanners_available=[],
             scanners_unavailable=[],
         )
@@ -76,6 +78,7 @@ def test_generate_metadata_captures_scanners():
 
         metadata = generate_metadata(
             engine_name="claude-code",
+            framework_name="stride-4q",
             scanners_available=["trivy", "semgrep"],
             scanners_unavailable=["gitleaks"],
         )
@@ -98,6 +101,7 @@ def test_generate_metadata_captures_user_objectives():
         }
         metadata = generate_metadata(
             engine_name="claude-code",
+            framework_name="stride-4q",
             scanners_available=[],
             scanners_unavailable=[],
             user_objectives=objectives,
@@ -117,6 +121,7 @@ def test_generate_metadata_handles_git_failures():
 
         metadata = generate_metadata(
             engine_name="claude-code",
+            framework_name="stride-4q",
             scanners_available=[],
             scanners_unavailable=[],
         )
@@ -135,6 +140,7 @@ def test_generate_metadata_timestamp_is_iso8601():
 
         metadata = generate_metadata(
             engine_name="claude-code",
+            framework_name="stride-4q",
             scanners_available=[],
             scanners_unavailable=[],
         )
@@ -151,6 +157,7 @@ def test_write_metadata_creates_json_file():
         metadata = ThreatSmithMetadata(
             threatsmith_version="0.2.0",
             engine="claude-code",
+            framework="stride-4q",
             commit_hash="abc123",
             branch="main",
             timestamp="2026-03-13T12:00:00+00:00",
@@ -181,6 +188,7 @@ def test_write_metadata_creates_directory_if_needed():
         metadata = ThreatSmithMetadata(
             threatsmith_version="0.2.0",
             engine="claude-code",
+            framework="stride-4q",
             commit_hash="hash",
             branch="branch",
             timestamp="2026-03-13T12:00:00+00:00",
@@ -205,6 +213,7 @@ def test_generate_metadata_json_serializable():
 
         metadata = generate_metadata(
             engine_name="claude-code",
+            framework_name="stride-4q",
             scanners_available=["trivy"],
             scanners_unavailable=["semgrep"],
             user_objectives={"business": "objectives"},
@@ -225,6 +234,7 @@ def test_generate_metadata_no_objectives_defaults_to_empty_dict():
 
         metadata = generate_metadata(
             engine_name="claude-code",
+            framework_name="stride-4q",
             scanners_available=[],
             scanners_unavailable=[],
         )

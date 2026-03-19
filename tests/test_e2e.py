@@ -27,6 +27,7 @@ _STAGE_FILENAMES = [
 _REQUIRED_METADATA_FIELDS = [
     "threatsmith_version",
     "engine",
+    "framework",
     "commit_hash",
     "branch",
     "timestamp",
@@ -73,7 +74,7 @@ def test_e2e_full_pipeline_creates_all_deliverables(tmp_path):
     mock_engine = _make_writing_engine(output_dir)
 
     with patch("threatsmith.main.get_engine", return_value=mock_engine):
-        result = runner.invoke(app, [str(tmp_path)])
+        result = runner.invoke(app, [str(tmp_path), "--framework", "pasta"])
 
     assert result.exit_code == 0
     for filename in _STAGE_FILENAMES:
@@ -93,7 +94,7 @@ def test_e2e_metadata_json_created_with_required_fields(tmp_path):
     mock_engine = _make_writing_engine(output_dir)
 
     with patch("threatsmith.main.get_engine", return_value=mock_engine):
-        runner.invoke(app, [str(tmp_path)])
+        runner.invoke(app, [str(tmp_path), "--framework", "pasta"])
 
     metadata_path = tmp_path / output_dir / "metadata.json"
     assert metadata_path.is_file(), "metadata.json was not created"
@@ -134,7 +135,7 @@ def test_e2e_context_accumulates_correctly(tmp_path):
     engine.execute.side_effect = execute_side_effect
 
     with patch("threatsmith.main.get_engine", return_value=engine):
-        result = runner.invoke(app, [str(tmp_path)])
+        result = runner.invoke(app, [str(tmp_path), "--framework", "pasta"])
 
     assert result.exit_code == 0
     assert len(captured_prompts) == 8

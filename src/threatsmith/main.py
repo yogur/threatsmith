@@ -10,7 +10,7 @@ from typing import Annotated
 import typer
 
 from threatsmith.engines import get_engine
-from threatsmith.frameworks import get_framework
+from threatsmith.frameworks import get_framework, list_frameworks
 from threatsmith.orchestrator import Orchestrator
 from threatsmith.utils.logging import configure_logging
 from threatsmith.utils.metadata import generate_metadata, write_metadata
@@ -54,12 +54,44 @@ def _print_logo() -> None:
     print()
 
 
+def _load_config(path: str) -> dict:
+    """Load .threatsmith.yml key-value config from the target directory."""
+    config_path = os.path.join(path, ".threatsmith.yml")
+    if not os.path.isfile(config_path):
+        return {}
+    config: dict = {}
+    try:
+        with open(config_path) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and ":" in line:
+                    key, _, value = line.partition(":")
+                    config[key.strip()] = value.strip()
+    except OSError:
+        pass
+    return config
+
+
 @app.command()
 def main(
-    path: Annotated[str, typer.Argument(help="Path to the target repository")],
+    path: Annotated[
+        str | None, typer.Argument(help="Path to the target repository")
+    ] = None,
     engine: Annotated[
         str, typer.Option(help="AI engine to use ('claude-code' or 'codex')")
     ] = "claude-code",
+    framework: Annotated[
+        str | None,
+        typer.Option(help="Threat modeling framework to use", show_default="stride-4q"),
+    ] = None,
+    list_frameworks_flag: Annotated[
+        bool,
+        typer.Option(
+            "--list-frameworks",
+            help="List available frameworks and exit",
+            is_eager=True,
+        ),
+    ] = False,
     business_objectives: Annotated[
         str | None,
         typer.Option(help="Optional business objectives to inject into the analysis"),
@@ -75,12 +107,35 @@ def main(
         bool, typer.Option("-v", "--verbose", help="Enable verbose logging")
     ] = False,
 ) -> None:
-    """Run ThreatSmith PASTA threat modeling pipeline against a repository."""
+    """Run ThreatSmith threat modeling pipeline against a repository."""
     configure_logging(verbose)
+
+    if list_frameworks_flag:
+        print("Available frameworks:")
+        for pack in list_frameworks():
+            print(f"  {pack.name:<12} {pack.display_name} — {pack.description}")
+        raise SystemExit(0)
+
+    if path is None:
+        logger.error("Missing argument: PATH")
+        raise SystemExit(1)
+
     _print_logo()
     if not os.path.isdir(path):
         logger.error("Path does not exist or is not a directory: %s", path)
         raise SystemExit(1)
+
+    # Load config file; CLI --framework takes precedence over config file
+    config = _load_config(path)
+    resolved_framework = framework or config.get("framework", "stride-4q")
+
+    # Validate and resolve framework pack
+    try:
+        pack = get_framework(resolved_framework)
+    except ValueError as exc:
+        logger.error("%s", exc)
+        raise SystemExit(1)
+
     # Resolve output directory (relative to target repo path)
     abs_output_dir = os.path.join(path, output_dir)
     os.makedirs(abs_output_dir, exist_ok=True)
@@ -101,6 +156,7 @@ def main(
     # Generate and write metadata before starting the pipeline
     metadata = generate_metadata(
         engine_name=engine,
+        framework_name=pack.name,
         scanners_available=scanner_info["available"],
         scanners_unavailable=scanner_info["unavailable"],
         user_objectives={
@@ -112,7 +168,6 @@ def main(
     logger.debug("Metadata written to: %s", abs_output_dir)
 
     # Run the pipeline
-    pack = get_framework("pasta")
     logger.info("Starting %s pipeline for: %s", pack.display_name, path)
     engine_instance = get_engine(engine)
     orchestrator = Orchestrator(

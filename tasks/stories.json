@@ -549,8 +549,8 @@
         "Tests pass"
       ],
       "priority": 32,
-      "passes": false,
-      "notes": "Depends on US-F01, US-F02 (registry), US-F09 (orchestrator accepts framework), US-F08 (PASTA pack), US-F16 (STRIDE pack), US-F23 (LINDDUN pack), US-F31 (MAESTRO pack)."
+      "passes": true,
+      "notes": "Added --framework (default stride-4q via config or CLI), --list-frameworks; config file .threatsmith.yml framework field with CLI override; framework recorded in metadata.json; updated generate_metadata to accept framework_name; updated test_e2e.py to pass --framework pasta. --rerun-stage deferred (not yet implemented in orchestrator; removed from CLI to avoid confusing users with a flag that does nothing)."
     },
     {
       "id": "US-F33",

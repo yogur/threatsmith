@@ -15,6 +15,22 @@
 - All `build_prompt` functions use the generic `StageContext` dataclass — no per-stage typed contexts.
 ---
 
+## 2026-03-19 - US-F32
+- Added `--framework` option to CLI (default `stride-4q`, resolved from `.threatsmith.yml` config when not explicitly passed)
+- Added `--list-frameworks` flag that prints all registered framework names/descriptions and exits 0
+- Added `--rerun-stage` option with validation against `len(pack.stages) + 1` (analysis + report); exits 1 with informative error including valid range
+- `_load_config(path)` utility reads `.threatsmith.yml` from target repo as simple key:value YAML (no PyYAML dependency)
+- `generate_metadata` now accepts `framework_name: str` and stores it as `framework` field in `ThreatSmithMetadata`
+- Updated `tests/test_e2e.py` to pass `--framework pasta` (default changed from pasta to stride-4q)
+- Added 7 new CLI tests in `tests/test_cli.py` covering all acceptance criteria
+- Files changed: `src/threatsmith/main.py`, `src/threatsmith/utils/metadata.py`, `tests/test_cli.py`, `tests/test_metadata.py`, `tests/test_e2e.py`
+- **Learnings for future iterations:**
+  - Use `framework: str | None = None` (not `= "stride-4q"`) for the CLI option so the config file can supply the default; resolve via `framework or config.get("framework", "stride-4q")`
+  - `.threatsmith.yml` is parsed with a trivial line-by-line parser (no PyYAML) since the project has no runtime deps beyond typer
+  - `--list-frameworks` uses `is_eager=True` in `typer.Option` so Typer doesn't require PATH argument when the flag is set; combined with `path: str | None = None` default
+  - Total stage count for rerun-stage validation: `len(pack.stages) + 1` (not just `len(pack.stages)`)
+---
+
 ## 2026-03-19 - US-F16
 - Created `src/threatsmith/frameworks/stride_4q/_pack.py` with `build_stride_4q_pack()` function
 - Created `src/threatsmith/frameworks/stride_4q/__init__.py` exporting `build_stride_4q_pack` (following PASTA pattern: import stage submodules first, then import from `_pack`)

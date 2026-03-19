@@ -242,3 +242,118 @@ def test_pipeline_exit_code_propagated(tmp_path):
     ):
         result = runner.invoke(app, [str(tmp_path)])
     assert result.exit_code == 1
+
+
+# --- US-F32: --framework flag and --list-frameworks ---
+
+
+def test_default_framework_is_stride_4q(tmp_path):
+    mock_cls, _ = _make_mock_orchestrator()
+    with (
+        patch("threatsmith.main.get_engine", return_value=MagicMock()),
+        patch("threatsmith.main.get_framework") as mock_get_framework,
+        patch("threatsmith.main.Orchestrator", mock_cls),
+        patch(
+            "threatsmith.main.detect_scanners",
+            return_value={"available": [], "unavailable": []},
+        ),
+        patch(
+            "threatsmith.main.generate_metadata",
+            return_value=MagicMock(commit_hash="abc"),
+        ),
+        patch("threatsmith.main.write_metadata"),
+    ):
+        mock_get_framework.return_value = MagicMock()
+        runner.invoke(app, [str(tmp_path)])
+    mock_get_framework.assert_called_once_with("stride-4q")
+
+
+def test_explicit_framework_pasta(tmp_path):
+    mock_cls, _ = _make_mock_orchestrator()
+    with (
+        patch("threatsmith.main.get_engine", return_value=MagicMock()),
+        patch("threatsmith.main.get_framework") as mock_get_framework,
+        patch("threatsmith.main.Orchestrator", mock_cls),
+        patch(
+            "threatsmith.main.detect_scanners",
+            return_value={"available": [], "unavailable": []},
+        ),
+        patch(
+            "threatsmith.main.generate_metadata",
+            return_value=MagicMock(commit_hash="abc"),
+        ),
+        patch("threatsmith.main.write_metadata"),
+    ):
+        mock_get_framework.return_value = MagicMock()
+        runner.invoke(app, [str(tmp_path), "--framework", "pasta"])
+    mock_get_framework.assert_called_once_with("pasta")
+
+
+def test_list_frameworks_output_contains_all_four():
+    result = runner.invoke(app, ["--list-frameworks"])
+    assert result.exit_code == 0
+    assert "stride-4q" in result.output
+    assert "pasta" in result.output
+    assert "linddun" in result.output
+    assert "maestro" in result.output
+
+
+def test_invalid_framework_name_produces_error(tmp_path):
+    with (
+        patch("threatsmith.main.get_engine", return_value=MagicMock()),
+        patch(
+            "threatsmith.main.detect_scanners",
+            return_value={"available": [], "unavailable": []},
+        ),
+        patch(
+            "threatsmith.main.generate_metadata",
+            return_value=MagicMock(commit_hash="abc"),
+        ),
+        patch("threatsmith.main.write_metadata"),
+    ):
+        result = runner.invoke(app, [str(tmp_path), "--framework", "unknown-fw"])
+    assert result.exit_code == 1
+
+
+def test_config_file_framework_used_when_no_cli_flag(tmp_path):
+    (tmp_path / ".threatsmith.yml").write_text("framework: pasta\n")
+    mock_cls, _ = _make_mock_orchestrator()
+    with (
+        patch("threatsmith.main.get_engine", return_value=MagicMock()),
+        patch("threatsmith.main.get_framework") as mock_get_framework,
+        patch("threatsmith.main.Orchestrator", mock_cls),
+        patch(
+            "threatsmith.main.detect_scanners",
+            return_value={"available": [], "unavailable": []},
+        ),
+        patch(
+            "threatsmith.main.generate_metadata",
+            return_value=MagicMock(commit_hash="abc"),
+        ),
+        patch("threatsmith.main.write_metadata"),
+    ):
+        mock_get_framework.return_value = MagicMock()
+        runner.invoke(app, [str(tmp_path)])
+    mock_get_framework.assert_called_once_with("pasta")
+
+
+def test_cli_framework_overrides_config_file(tmp_path):
+    (tmp_path / ".threatsmith.yml").write_text("framework: pasta\n")
+    mock_cls, _ = _make_mock_orchestrator()
+    with (
+        patch("threatsmith.main.get_engine", return_value=MagicMock()),
+        patch("threatsmith.main.get_framework") as mock_get_framework,
+        patch("threatsmith.main.Orchestrator", mock_cls),
+        patch(
+            "threatsmith.main.detect_scanners",
+            return_value={"available": [], "unavailable": []},
+        ),
+        patch(
+            "threatsmith.main.generate_metadata",
+            return_value=MagicMock(commit_hash="abc"),
+        ),
+        patch("threatsmith.main.write_metadata"),
+    ):
+        mock_get_framework.return_value = MagicMock()
+        runner.invoke(app, [str(tmp_path), "--framework", "stride-4q"])
+    mock_get_framework.assert_called_once_with("stride-4q")
