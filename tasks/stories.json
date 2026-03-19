@@ -195,8 +195,8 @@
         "Tests pass"
       ],
       "priority": 11,
-      "passes": false,
-      "notes": "Depends on US-F03 (stride_4q package must exist under frameworks/)."
+      "passes": true,
+      "notes": "stage_01_system_model.py with STAGE_PROMPT and build_prompt; covers application purpose, tech stack, data flows, actors/assets, trust boundaries, entry points, external dependencies, deployment context; Mermaid DFD required; 15 tests in tests/stride_4q/"
     },
     {
       "id": "US-F12",

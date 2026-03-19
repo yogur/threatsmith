@@ -1,4 +1,5 @@
 ## Codebase Patterns
+- 4QF+STRIDE stage modules live in `frameworks/stride_4q/`; tests in `tests/stride_4q/`. Same patterns as PASTA stages: `STAGE_PROMPT` constant + `build_prompt(context, output_dir)` using `.replace()` for placeholders.
 - **No circular imports**: Pack builders (`frameworks/pasta/_pack.py`) import from `frameworks.types` directly (sibling module), not from `frameworks/__init__`. This keeps the import graph a DAG: `frameworks/__init__` → `_built_in` → `frameworks.pasta._pack` → `frameworks.types`.
 - `evaluate_reference_conditions(reference_config, prior_outputs)` in `frameworks/references/conditions.py` (re-exported from `frameworks/references/__init__.py`) is the canonical utility for conditional reference injection. Each entry in `reference_config` is a dict with `"condition"` and `"reference"` keys. Conditions: `always`, `api_detected`, `llm_detected`. The function searches all values in `prior_outputs` (case-insensitively combined) for keyword matches.
 - Keyword constants `API_KEYWORDS` and `LLM_KEYWORDS` in `frameworks/references/conditions.py` are the authoritative keyword lists for framework pack reference injection conditions.
@@ -12,6 +13,20 @@
 - `_REGISTRY` is a module-level dict in `types.py`; tests use the `autouse` fixture to snapshot/restore it so registrations don't leak between tests.
 - `ruff` enforces E731 (no lambda assignments) — use `def` for named callables in tests.
 - All `build_prompt` functions use the generic `StageContext` dataclass — no per-stage typed contexts.
+---
+
+## 2026-03-19 - US-F11
+- Created `src/threatsmith/frameworks/stride_4q/stage_01_system_model.py` with `STAGE_PROMPT` constant and `build_prompt` function
+- Prompt covers all 8 analysis areas from the acceptance criteria: application purpose/scope, technology stack, data flows, actors/assets, trust boundaries, entry points, external dependencies, deployment context
+- Prompt requires at least one Mermaid DFD with example syntax
+- Prompt references the Four Question Framework ("What are we working on?")
+- Created `tests/stride_4q/test_stage_01_system_model.py` with 15 tests: objectives injection (with/without/both/none/empty), output file path, custom output dir, trailing slash normalization, placeholder absence, Mermaid instruction, 4QF context
+- Created `src/threatsmith/frameworks/stride_4q/__init__.py` (empty, package marker)
+- Files changed: `src/threatsmith/frameworks/stride_4q/__init__.py` (new), `src/threatsmith/frameworks/stride_4q/stage_01_system_model.py` (new), `tests/stride_4q/__init__.py` (new), `tests/stride_4q/test_stage_01_system_model.py` (new)
+- **Learnings for future iterations:**
+  - The `stride_4q/__init__.py` starts empty; `build_stride_4q_pack()` will be added later (US-F16)
+  - 4QF+STRIDE stages follow the exact same `build_prompt` pattern as PASTA stages — copy the structure and adapt content
+  - Stage 1 is the only 4QF+STRIDE stage with user objectives injection; stages 2-4 use prior outputs instead
 ---
 
 ## 2026-03-19 - US-F09 and US-F10

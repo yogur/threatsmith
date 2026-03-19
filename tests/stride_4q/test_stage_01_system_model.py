@@ -1,0 +1,109 @@
+"""Tests for 4QF+STRIDE Stage 1 — System Model prompt template."""
+
+from threatsmith.frameworks.stride_4q.stage_01_system_model import (
+    STAGE_PROMPT,
+    build_prompt,
+)
+from threatsmith.frameworks.types import StageContext
+
+
+class TestBuildPrompt:
+    def test_returns_string(self):
+        result = build_prompt(StageContext())
+        assert isinstance(result, str)
+
+    def test_with_business_objectives(self):
+        result = build_prompt(
+            StageContext(
+                user_objectives={
+                    "business_objectives": "Protect user data and meet GDPR"
+                }
+            )
+        )
+        assert "Protect user data and meet GDPR" in result
+        assert "USER-SUPPLIED OBJECTIVES" in result
+
+    def test_with_security_objectives(self):
+        result = build_prompt(
+            StageContext(
+                user_objectives={"security_objectives": "Reduce data exfiltration risk"}
+            )
+        )
+        assert "Reduce data exfiltration risk" in result
+        assert "USER-SUPPLIED OBJECTIVES" in result
+
+    def test_with_both_objectives(self):
+        result = build_prompt(
+            StageContext(
+                user_objectives={
+                    "business_objectives": "Protect user data",
+                    "security_objectives": "Reduce exfiltration risk",
+                }
+            )
+        )
+        assert "Protect user data" in result
+        assert "Reduce exfiltration risk" in result
+
+    def test_without_objectives_omits_section(self):
+        result = build_prompt(StageContext())
+        assert "USER-SUPPLIED OBJECTIVES" not in result
+
+    def test_none_values_treated_as_absent(self):
+        result = build_prompt(
+            StageContext(
+                user_objectives={
+                    "business_objectives": None,
+                    "security_objectives": None,
+                }
+            )
+        )
+        assert "USER-SUPPLIED OBJECTIVES" not in result
+        assert "None" not in result
+
+    def test_empty_string_values_treated_as_absent(self):
+        result = build_prompt(
+            StageContext(
+                user_objectives={
+                    "business_objectives": "",
+                    "security_objectives": "",
+                }
+            )
+        )
+        assert "USER-SUPPLIED OBJECTIVES" not in result
+
+    def test_references_output_file(self):
+        result = build_prompt(StageContext())
+        assert "threatmodel/01-system-model.md" in result
+
+    def test_custom_output_dir(self):
+        result = build_prompt(StageContext(), output_dir="output")
+        assert "output/01-system-model.md" in result
+
+    def test_output_dir_trailing_slash_normalized(self):
+        result = build_prompt(StageContext(), output_dir="output/")
+        assert "output/01-system-model.md" in result
+        assert "output//01-system-model.md" not in result
+
+    def test_no_raw_placeholder_in_output(self):
+        result = build_prompt(StageContext())
+        assert "{user_objectives_section}" not in result
+        assert "{output_dir}" not in result
+
+    def test_contains_mermaid_instruction(self):
+        result = build_prompt(StageContext())
+        assert "Mermaid" in result
+        assert "DFD" in result
+
+    def test_contains_four_question_framework_context(self):
+        result = build_prompt(StageContext())
+        assert "What are we working on?" in result
+
+
+class TestStagePrompt:
+    def test_is_non_empty_string(self):
+        assert isinstance(STAGE_PROMPT, str)
+        assert len(STAGE_PROMPT) > 0
+
+    def test_contains_placeholders(self):
+        assert "{user_objectives_section}" in STAGE_PROMPT
+        assert "{output_dir}" in STAGE_PROMPT
