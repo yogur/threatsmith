@@ -8,6 +8,10 @@ authors = [
     {name = "Abdul Rahman Al-Kibbe"}
 ]
 keywords = ["security", "code-review", "ai", "pasta", "owasp", "threat-modeling"]
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
 dependencies = [
     "typer>=0.12",
     "structlog>=24.0",
