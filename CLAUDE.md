@@ -23,7 +23,7 @@ Always run `uv run ruff check --fix` and `uv run ruff format` to let the tools a
 ```
 CLI (main.py)
   → detect_scanners(), generate_metadata()
-  → pack = get_framework("pasta")
+  → pack = get_framework(framework_name)  # default "stride-4q", configurable via --framework or .threatsmith.yml
   → Orchestrator(engine, repo_path, pack, ...).run()
       → for stage in pack.stages + [pack.report_stage]:
           assemble_prompt(stage, pack, prior_outputs, scanner_info, ...)
@@ -37,14 +37,14 @@ CLI (main.py)
 - **Engine** (`engines/base.py`): ABC with `execute(prompt: str, working_directory: str) -> int`. Engines are thin subprocess wrappers — prompt assembly is the orchestrator's job.
 - **`get_engine(name)`** (`engines/__init__.py`): Factory mapping `"claude-code"` / `"codex"` to engine classes.
 - **`assemble_prompt()`** (`assembler.py` — top-level module): Framework-agnostic. Accepts `StageSpec` + `FrameworkPack`, evaluates reference conditions, builds `StageContext`, calls `stage.build_prompt(context, output_dir)`. Returns a single prompt string.
-- **Stage prompt modules** (`frameworks/pasta/stage_01_objectives.py` through `frameworks/pasta/stage_08_report.py`): Each exports `STAGE_PROMPT` constant + `build_prompt(context: StageContext, output_dir="threatmodel") -> str`.
+- **Stage prompt modules**: Each exports `STAGE_PROMPT` constant + `build_prompt(context: StageContext, output_dir="threatmodel") -> str`. PASTA stages live in `frameworks/pasta/stage_01_objectives.py` through `stage_08_report.py`; 4QF+STRIDE stages in `frameworks/stride_4q/stage_01_system_model.py` through `stage_05_report.py`.
 - **`StageContext`** (`frameworks/types.py`): Generic dataclass passed to all `build_prompt` functions. Fields: `user_objectives` (dict | None), `prior_outputs` (dict[str, str]), `scanners_available` (list[str] | None), `references` (list[str]).
 - **`FrameworkPack` / `StageSpec`** (`frameworks/types.py`): Define framework structure — stages, output files, scanner stages, reference sets.
 - **Orchestrator** (`orchestrator.py`): Framework-agnostic dataclass. Accepts `pack: FrameworkPack`. `run()` iterates `pack.stages + [pack.report_stage]`, accumulates deliverables in `_prior_outputs` dict keyed as `stage_01_output` through `stage_NN_output`. Returns 0 on success, 1 on failure.
 
 ### Dynamic injection
 
-- **Reference injection** (assembler-driven): The assembler evaluates `pack.reference_sets[stage.number]` via `evaluate_reference_conditions()` against prior outputs. Resolved reference strings are passed to `build_prompt` via `context.references`. For PASTA stage 4: Web Top 10 always, API/LLM Top 10 conditional on keyword detection.
+- **Reference injection** (assembler-driven): The assembler evaluates `pack.reference_sets[stage.number]` via `evaluate_reference_conditions()` against prior outputs. Resolved reference strings are passed to `build_prompt` via `context.references`. Supported conditions: `always`, `api_detected`, `llm_detected`, `mobile_detected`. PASTA stage 4 and STRIDE-4Q stage 2 both inject OWASP Web Top 10 (always) + API/LLM/Mobile Top 10 (conditional). STRIDE-4Q stage 2 also injects STRIDE_CATEGORIES (always).
 - **Scanner snippets** (assembler-driven): The assembler checks `stage.number in pack.scanner_stages`. If true, `context.scanners_available` is populated from `scanner_info["available"]`. Stage `build_prompt` functions look up scanner snippets from `SCANNER_SNIPPETS` dict in `frameworks/references/scanner_snippets.py`.
 
 ### Import graph (no circular dependencies)
@@ -52,9 +52,10 @@ CLI (main.py)
 ```
 frameworks/types.py           ← pure dataclasses + registry (no threatsmith imports)
 frameworks/__init__.py        ← imports types.py; imports _built_in.py (side-effect registration)
-frameworks/_built_in.py       ← imports pack builders from frameworks.pasta, etc.
+frameworks/_built_in.py       ← imports pack builders from frameworks.pasta, frameworks.stride_4q
 frameworks/pasta/_pack.py     ← imports frameworks.types (sibling), frameworks.pasta.stage_XX, frameworks.references.owasp
-frameworks/references/*       ← pure constants + utility (no threatsmith imports)
+frameworks/stride_4q/_pack.py ← imports frameworks.types (sibling), frameworks.stride_4q.stage_XX, frameworks.references.*
+frameworks/references/*       ← pure constants + conditions utility (no threatsmith imports)
 assembler.py                  ← imports frameworks.types, frameworks.references
 orchestrator.py               ← imports assembler, engines.base
 main.py                       ← imports frameworks, orchestrator, engines, utils
@@ -75,11 +76,12 @@ Pack builders import from `frameworks.types` directly (sibling module), not from
 - **References access**: `context.references` is a `list[str]` of pre-resolved reference strings, populated by the assembler from `pack.reference_sets`.
 - **Logging**: Modules use `logger = logging.getLogger(__name__)`. CLI configures via `configure_logging(verbose)` in `utils/logging.py`. DEBUG = verbose, INFO = operational progress, WARNING/ERROR = failures.
 - **scanner_info keys**: `detect_scanners()` returns `{"available": [...], "unavailable": [...]}`. The assembler maps `scanner_info["available"]` to `StageContext.scanners_available`.
-- **metadata.json**: `generate_metadata()` accepts `engine_name` param but writes `"engine"` key. Returns a `Metadata` dataclass. `write_metadata(output_dir, metadata)` serializes to JSON.
+- **metadata.json**: `generate_metadata()` accepts `framework: FrameworkPack` and `stages_completed: int = 0`. Returns a `ThreatSmithMetadata` dataclass with fields including `engine`, `framework` (pack name), `framework_display_name`, `stages_completed`. Metadata is written AFTER the pipeline run to capture accurate `stages_completed`. `write_metadata(output_dir, metadata)` serializes to JSON.
+- **CLI config**: `_load_config(path)` reads `.threatsmith.yml` from target repo (trivial line-by-line parser, no PyYAML). `--framework` defaults to config value or `"stride-4q"`. `--list-frameworks` prints registered packs and exits. `--rerun-stage` validates against `len(pack.stages) + 1`.
 
 ## Testing Patterns
 
-- Tests are in `tests/` at root level. PASTA stage tests live in `tests/pasta/` (e.g. `tests/pasta/test_stage_04.py` tests `frameworks/pasta/stage_04_threat_analysis.py`). Framework-specific tests for other frameworks follow the same pattern: `tests/<framework>/`.
+- Tests are in `tests/` at root level. Framework-specific stage tests live in `tests/<framework>/` subdirectories: `tests/pasta/` for PASTA stages, `tests/stride_4q/` for 4QF+STRIDE stages. E2E tests: `tests/test_e2e_pasta.py`, `tests/test_e2e_stride_4q.py`. Cross-cutting tests (assembler, orchestrator, CLI, metadata, etc.) stay at `tests/` root.
 - Do not write tests for string constants — test logic and behavior only.
 - **Mock engine in E2E tests**: Use a closure over `output_dir` in `execute_side_effect(prompt, working_directory)` to write stage files. Track call count with `{"n": 0}` dict.
 - **Patch location for CLI tests**: Patch `threatsmith.main.get_engine` and `threatsmith.main.get_framework` (not the module-level imports) since the CLI imports into its own namespace.
