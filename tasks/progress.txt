@@ -15,6 +15,17 @@
 - All `build_prompt` functions use the generic `StageContext` dataclass — no per-stage typed contexts.
 ---
 
+## 2026-03-23 - US-F34
+- Created `tests/test_e2e_stride_4q.py` with 4 E2E tests for the full 4QF+STRIDE pipeline
+- Tests cover: all 5 deliverable files created, Stage 2 prompt contains STRIDE categories, metadata `framework: "stride-4q"`, context accumulation across all 4 analysis stages + report
+- Pattern mirrors `tests/test_e2e.py` (PASTA) with `_make_writing_engine` using `call_count = {"n": 0}` closure dict
+- Files changed: `tests/test_e2e_stride_4q.py` (new)
+- **Learnings for future iterations:**
+  - E2E tests for new frameworks follow the same `_make_writing_engine` + `call_count` dict pattern as PASTA test_e2e.py
+  - Mock engine `execute_side_effect` signature must include `output_dir: str` as third parameter (matches actual Engine.execute signature)
+  - Stage 2 STRIDE reference test: check for both "STRIDE" and "Spoofing" (the STRIDE_CATEGORIES constant contains both)
+---
+
 ## 2026-03-19 - US-F33
 - Added `framework_display_name: str` and `stages_completed: int` to `ThreatSmithMetadata`
 - Changed `generate_metadata` signature: `framework_name: str` → `framework: FrameworkPack`; added `stages_completed: int = 0` param
