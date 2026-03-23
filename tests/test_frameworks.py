@@ -109,16 +109,6 @@ class TestGetFramework:
         register_framework(pack)
         assert get_framework("pasta") is pack
 
-    def test_get_framework_linddun(self):
-        pack = _make_pack("linddun", "LINDDUN Pro")
-        register_framework(pack)
-        assert get_framework("linddun") is pack
-
-    def test_get_framework_maestro(self):
-        pack = _make_pack("maestro", "MAESTRO")
-        register_framework(pack)
-        assert get_framework("maestro") is pack
-
     def test_get_framework_invalid_name_raises_value_error(self):
         register_framework(_make_pack("stride-4q", "4QF + STRIDE"))
         with pytest.raises(ValueError, match="Unknown framework 'bogus'"):
@@ -138,10 +128,10 @@ class TestGetFramework:
 
 
 class TestListFrameworks:
-    def test_list_frameworks_returns_all_four(self):
+    def test_list_frameworks_returns_built_in(self):
         packs = list_frameworks()
         names = {p.name for p in packs}
-        assert names == {"stride-4q", "pasta", "linddun", "maestro"}
+        assert names == {"stride-4q", "pasta"}
 
     def test_list_frameworks_returns_framework_pack_instances(self):
         packs = list_frameworks()

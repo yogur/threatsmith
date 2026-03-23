@@ -290,13 +290,11 @@ def test_explicit_framework_pasta(tmp_path):
     mock_get_framework.assert_called_once_with("pasta")
 
 
-def test_list_frameworks_output_contains_all_four():
+def test_list_frameworks_output_contains_built_in():
     result = runner.invoke(app, ["--list-frameworks"])
     assert result.exit_code == 0
     assert "stride-4q" in result.output
     assert "pasta" in result.output
-    assert "linddun" in result.output
-    assert "maestro" in result.output
 
 
 def test_invalid_framework_name_produces_error(tmp_path):

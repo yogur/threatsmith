@@ -1,6 +1,6 @@
 ## Project Overview
 
-ThreatSmith is an AI-powered threat modeling engine supporting multiple methodologies (PASTA, 4QF+STRIDE, LINDDUN Pro, MAESTRO) via a pluggable framework pack architecture. It wraps AI coding agents (Claude Code, Codex) to orchestrate a multi-stage threat modeling pipeline plus a report consolidation step, producing structured markdown deliverables.
+ThreatSmith is an AI-powered threat modeling engine supporting multiple methodologies (PASTA, 4QF+STRIDE) via a pluggable framework pack architecture. It wraps AI coding agents (Claude Code, Codex) to orchestrate a multi-stage threat modeling pipeline plus a report consolidation step, producing structured markdown deliverables.
 
 ## Technical Stack
 

@@ -1,8 +1,8 @@
 # ThreatSmith Framework Packs — Product Requirements Document
 
-**Author:** Abed  
-**Date:** March 2026  
-**Status:** Draft  
+**Author:** Abed
+**Date:** March 2026
+**Status:** Complete (v0.3.0) — LINDDUN Pro and MAESTRO deferred to future release
 **Builds on:** ThreatSmith v0.2.0 (sequential PASTA pipeline with Claude Code / Codex engines)
 
 ---
@@ -11,28 +11,32 @@
 
 ### 1.1 Release Goal
 
-ThreatSmith currently runs a single methodology: PASTA. This release introduces a framework pack architecture that supports multiple threat modeling methodologies as pluggable, self-contained modules. The orchestrator becomes methodology-agnostic, and users choose their framework via a `--framework` CLI flag. Four frameworks ship in this release:
+ThreatSmith currently runs a single methodology: PASTA. This release introduces a framework pack architecture that supports multiple threat modeling methodologies as pluggable, self-contained modules. The orchestrator becomes methodology-agnostic, and users choose their framework via a `--framework` CLI flag. Two frameworks ship in v0.3.0; two are deferred to future release:
 
-- **4QF+STRIDE** — Four Question Framework with STRIDE. Lightweight, fast, good default for most codebases.
-- **PASTA** — Full 7-stage risk-centric analysis. Already implemented, migrated into the pack structure.
-- **LINDDUN Pro** — Systematic privacy threat modeling. For codebases handling personal data under GDPR, HIPAA, or similar regulations.
-- **MAESTRO** — AI/ML system threat modeling. For codebases that include models, training pipelines, inference services, or autonomous agents.
+- **4QF+STRIDE** — Four Question Framework with STRIDE. Lightweight, fast, good default for most codebases. *(shipped)*
+- **PASTA** — Full 7-stage risk-centric analysis. Already implemented, migrated into the pack structure. *(shipped)*
+- **LINDDUN Pro** — Systematic privacy threat modeling. For codebases handling personal data under GDPR, HIPAA, or similar regulations. *(deferred to future release)*
+- **MAESTRO** — AI/ML system threat modeling. For codebases that include models, training pipelines, inference services, or autonomous agents. *(deferred to future release)*
 
 ### 1.2 Scope
 
-**In scope:**
+**In scope (shipped in v0.3.0):**
 
 - Framework pack abstraction (data model, registry, discovery)
 - Orchestrator and assembler refactor to be framework-agnostic
 - Migration of existing PASTA prompts into the pack structure
 - 4QF+STRIDE framework pack with stage prompts and reference lists
-- LINDDUN Pro framework pack with stage prompts and privacy pattern references
-- MAESTRO framework pack with stage prompts and AI threat references
 - Scanner integration as a framework-configurable concern
 - CLI `--framework` flag (default: `stride-4q`)
 - Metadata framework tracking
 
-**Out of scope:**
+**deferred to future release:**
+
+- LINDDUN Pro framework pack (US-F06, US-F17–US-F23, US-F35)
+- MAESTRO framework pack (US-F07, US-F24–US-F31, US-F36)
+- `linddun_catalogue.py` and `mitre_atlas.py` reference constants
+
+**Out of scope (all versions):**
 
 - Custom user-defined frameworks
 - Framework-specific scanner plugins (e.g., privacy scanners for LINDDUN, AI-specific scanners for MAESTRO)
@@ -131,8 +135,8 @@ src/threatsmith/
       owasp.py                             # OWASP_WEB/API/LLM/MOBILE_TOP_10
       scanner_snippets.py                  # SCANNER_SNIPPETS dict
       stride_categories.py                 # STRIDE_CATEGORIES
-      linddun_catalogue.py                 # LINDDUN_THREAT_TYPES, LINDDUN_DFD_PATTERNS (new)
-      mitre_atlas.py                       # MITRE_ATLAS_TECHNIQUES (new)
+      linddun_catalogue.py                 # LINDDUN_THREAT_TYPES, LINDDUN_DFD_PATTERNS (deferred to future release)
+      mitre_atlas.py                       # MITRE_ATLAS_TECHNIQUES (deferred to future release)
     pasta/
       __init__.py                          # Exports build_pasta_pack
       _pack.py                             # build_pasta_pack() implementation
@@ -142,13 +146,9 @@ src/threatsmith/
       _pack.py                             # build_stride_4q_pack() implementation
       stage_01_system_model.py ... stage_05_report.py
     linddun/
-      __init__.py                          # Exports build_linddun_pack
-      _pack.py                             # build_linddun_pack() implementation
-      stage_01_system_context.py ... stage_06_report.py
+      __init__.py                          # Empty package marker (deferred to future release)
     maestro/
-      __init__.py                          # Exports build_maestro_pack
-      _pack.py                             # build_maestro_pack() implementation
-      stage_01_ai_system_profiling.py ... stage_07_report.py
+      __init__.py                          # Empty package marker (deferred to future release)
 ```
 
 Shared reference modules (`owasp.py`, `scanner_snippets.py`) are at the `frameworks/references/` level since they may be consumed by multiple frameworks. Framework-specific references (`linddun_catalogue.py`, `mitre_atlas.py`) are also at this level for consistency and potential cross-framework reuse.
@@ -214,7 +214,7 @@ Stage structure, prompt content, OWASP reference injection, and scanner integrat
 
 ---
 
-### 3.3 LINDDUN Pro
+### 3.3 LINDDUN Pro *(deferred to future release)*
 
 LINDDUN Pro is a systematic privacy threat modeling methodology. It identifies threats to personal data across seven categories: Linking, Identifying, Non-repudiation, Detecting, Data Disclosure, Unawareness, and Non-compliance. Each category targets a specific privacy property (unlinkability, anonymity, plausible deniability, undetectability, confidentiality, content awareness, and policy compliance respectively).
 
@@ -241,7 +241,7 @@ LINDDUN Pro is a systematic privacy threat modeling methodology. It identifies t
 
 ---
 
-### 3.4 MAESTRO
+### 3.4 MAESTRO *(deferred to future release)*
 
 MAESTRO focuses on threats specific to AI and machine learning systems: model integrity, training data security, inference pipeline attacks, agent autonomy risks, and AI supply chain vulnerabilities. It draws on MITRE ATLAS (Adversarial Threat Landscape for AI Systems) for threat technique classification and OWASP LLM Top 10 for coverage validation.
 
@@ -291,9 +291,9 @@ D: Denial of Service — absorbing resources needed to provide service
 E: Elevation of Privilege — allowing someone to do something they are not authorized to do
 ```
 
-**`linddun_catalogue.py`** — LINDDUN threat type definitions with privacy property mapping. Contains the seven categories with descriptions and the privacy property each protects. Also includes a concise reference of common privacy threat patterns per DFD element type (process, data store, data flow, external entity) to guide the agent's systematic elicitation.
+**`linddun_catalogue.py`** *(deferred to future release)* — LINDDUN threat type definitions with privacy property mapping. Contains the seven categories with descriptions and the privacy property each protects. Also includes a concise reference of common privacy threat patterns per DFD element type (process, data store, data flow, external entity) to guide the agent's systematic elicitation.
 
-**`mitre_atlas.py`** — MITRE ATLAS technique reference for AI/ML threats. Concise listing of ATLAS tactics and high-relevance techniques with IDs and one-line descriptions. Covers: reconnaissance, resource development, initial access (to ML systems), ML attack staging, ML model access, exfiltration, and impact. Kept concise following the same approach as OWASP references — category names and one-liners, not full technique writeups.
+**`mitre_atlas.py`** *(deferred to future release)* — MITRE ATLAS technique reference for AI/ML threats. Concise listing of ATLAS tactics and high-relevance techniques with IDs and one-line descriptions. Covers: reconnaissance, resource development, initial access (to ML systems), ML attack staging, ML model access, exfiltration, and impact. Kept concise following the same approach as OWASP references — category names and one-liners, not full technique writeups.
 
 ### 4.3 Maintenance
 
@@ -557,7 +557,7 @@ The assembler evaluates conditions against prior stage outputs using the same ke
 - Formatted as a concise reference block suitable for prompt injection
 - Tests verify all six categories are present by initial letter (S, T, R, I, D, E)
 
-### US-F09: LINDDUN threat catalogue reference constants
+### US-F09: LINDDUN threat catalogue reference constants *(deferred to future release)*
 
 **Description:** As a developer, I want LINDDUN threat type definitions as a constant so that the LINDDUN Pro framework can inject them as a systematic reference.
 
@@ -568,7 +568,7 @@ The assembler evaluates conditions against prior stage outputs using the same ke
 - Module exports `LINDDUN_DFD_PATTERNS` constant mapping DFD element types (process, data store, data flow, external entity) to common threat patterns per LINDDUN category
 - Tests verify all seven categories are present and DFD patterns cover all four element types
 
-### US-F10: MITRE ATLAS reference constants
+### US-F10: MITRE ATLAS reference constants *(deferred to future release)*
 
 **Description:** As a developer, I want MITRE ATLAS technique references as a constant so that the MAESTRO framework can inject them as a systematic reference.
 
@@ -658,7 +658,7 @@ The assembler evaluates conditions against prior stage outputs using the same ke
 - `reference_sets` includes STRIDE categories (always) and OWASP Web Top 10 (always) on stage 2, with conditional API and LLM Top 10
 - Tests verify pack structure, stage count, scanner stages, and reference configuration
 
-### US-F17: LINDDUN Pro Stage 1 prompt — System Context and Data Inventory
+### US-F17: LINDDUN Pro Stage 1 prompt — System Context and Data Inventory *(deferred to future release)*
 
 **Description:** As a developer, I want a prompt template for the LINDDUN Pro System Context stage focused on personal data inventory and regulatory context.
 
@@ -671,7 +671,7 @@ The assembler evaluates conditions against prior stage outputs using the same ke
 - Module exports `build_prompt(context: dict)` that injects user objectives when provided
 - Tests cover: build_prompt with and without objectives
 
-### US-F18: LINDDUN Pro Stage 2 prompt — Data Flow Decomposition
+### US-F18: LINDDUN Pro Stage 2 prompt — Data Flow Decomposition *(deferred to future release)*
 
 **Description:** As a developer, I want a prompt template for the LINDDUN Pro Data Flow stage with privacy-annotated DFDs.
 
@@ -684,7 +684,7 @@ The assembler evaluates conditions against prior stage outputs using the same ke
 - Module exports `build_prompt(context: dict)` that injects Stage 1 output
 - Tests cover: build_prompt with Stage 1 context
 
-### US-F19: LINDDUN Pro Stage 3 prompt — Threat Elicitation
+### US-F19: LINDDUN Pro Stage 3 prompt — Threat Elicitation *(deferred to future release)*
 
 **Description:** As a developer, I want a prompt template for the LINDDUN Pro Threat Elicitation stage with systematic per-DFD-element analysis across all seven LINDDUN categories.
 
@@ -698,7 +698,7 @@ The assembler evaluates conditions against prior stage outputs using the same ke
 - Module exports `build_prompt(context: dict)` that injects Stages 1-2 outputs and LINDDUN catalogue reference
 - Tests cover: build_prompt with prior context and catalogue injection
 
-### US-F20: LINDDUN Pro Stage 4 prompt — Threat Prioritization
+### US-F20: LINDDUN Pro Stage 4 prompt — Threat Prioritization *(deferred to future release)*
 
 **Description:** As a developer, I want a prompt template for the LINDDUN Pro Threat Prioritization stage with privacy-focused risk assessment.
 
@@ -710,7 +710,7 @@ The assembler evaluates conditions against prior stage outputs using the same ke
 - Module exports `build_prompt(context: dict)` that injects Stages 1-3 outputs
 - Tests cover: build_prompt with prior stage context
 
-### US-F21: LINDDUN Pro Stage 5 prompt — Mitigation Selection
+### US-F21: LINDDUN Pro Stage 5 prompt — Mitigation Selection *(deferred to future release)*
 
 **Description:** As a developer, I want a prompt template for the LINDDUN Pro Mitigation stage with privacy enhancing technologies and privacy patterns.
 
@@ -723,7 +723,7 @@ The assembler evaluates conditions against prior stage outputs using the same ke
 - Module exports `build_prompt(context: dict)` that injects Stages 1-4 outputs and LINDDUN mitigation references
 - Tests cover: build_prompt with prior context and mitigation reference injection
 
-### US-F22: LINDDUN Pro Stage 6 prompt — Report Consolidation
+### US-F22: LINDDUN Pro Stage 6 prompt — Report Consolidation *(deferred to future release)*
 
 **Description:** As a developer, I want a prompt template for the LINDDUN Pro report consolidation step.
 
@@ -736,7 +736,7 @@ The assembler evaluates conditions against prior stage outputs using the same ke
 - Module exports `build_prompt(context: dict)` that injects Stages 1-5 outputs
 - Tests cover: build_prompt with all stage outputs
 
-### US-F23: LINDDUN Pro pack builder
+### US-F23: LINDDUN Pro pack builder *(deferred to future release)*
 
 **Description:** As a developer, I want a pack builder function that assembles the LINDDUN Pro framework pack.
 
@@ -749,7 +749,7 @@ The assembler evaluates conditions against prior stage outputs using the same ke
 - `reference_sets` includes LINDDUN catalogue on stage 3 and mitigation references on stage 5
 - Tests verify pack structure
 
-### US-F24: MAESTRO Stage 1 prompt — AI System Profiling
+### US-F24: MAESTRO Stage 1 prompt — AI System Profiling *(deferred to future release)*
 
 **Description:** As a developer, I want a prompt template for the MAESTRO AI System Profiling stage focused on inventorying AI/ML components, models, and agent capabilities.
 
@@ -762,7 +762,7 @@ The assembler evaluates conditions against prior stage outputs using the same ke
 - Module exports `build_prompt(context: dict)` that injects user objectives when provided
 - Tests cover: build_prompt with and without objectives
 
-### US-F25: MAESTRO Stage 2 prompt — Architecture and Data Flow
+### US-F25: MAESTRO Stage 2 prompt — Architecture and Data Flow *(deferred to future release)*
 
 **Description:** As a developer, I want a prompt template for the MAESTRO Architecture stage focused on AI-specific architecture decomposition and data flow.
 
@@ -774,7 +774,7 @@ The assembler evaluates conditions against prior stage outputs using the same ke
 - Module exports `build_prompt(context: dict)` that injects Stage 1 output
 - Tests cover: build_prompt with Stage 1 context
 
-### US-F26: MAESTRO Stage 3 prompt — Threat Identification
+### US-F26: MAESTRO Stage 3 prompt — Threat Identification *(deferred to future release)*
 
 **Description:** As a developer, I want a prompt template for the MAESTRO Threat Identification stage using MITRE ATLAS and OWASP LLM Top 10.
 
@@ -787,7 +787,7 @@ The assembler evaluates conditions against prior stage outputs using the same ke
 - Module exports `build_prompt(context: dict)` that injects Stages 1-2 outputs, MITRE ATLAS reference, and OWASP LLM Top 10
 - Tests cover: build_prompt with prior context and reference injection
 
-### US-F27: MAESTRO Stage 4 prompt — Vulnerability Analysis
+### US-F27: MAESTRO Stage 4 prompt — Vulnerability Analysis *(deferred to future release)*
 
 **Description:** As a developer, I want a prompt template for the MAESTRO Vulnerability Analysis stage focused on AI-specific vulnerabilities with scanner integration.
 
@@ -799,7 +799,7 @@ The assembler evaluates conditions against prior stage outputs using the same ke
 - Module exports `build_prompt(context: dict)` that injects Stages 1-3 outputs and scanner context
 - Tests cover: build_prompt with and without scanner context
 
-### US-F28: MAESTRO Stage 5 prompt — Attack Modeling
+### US-F28: MAESTRO Stage 5 prompt — Attack Modeling *(deferred to future release)*
 
 **Description:** As a developer, I want a prompt template for the MAESTRO Attack Modeling stage with AI-specific attack trees and MITRE ATLAS mapping.
 
@@ -811,7 +811,7 @@ The assembler evaluates conditions against prior stage outputs using the same ke
 - Module exports `build_prompt(context: dict)` that injects Stages 1-4 outputs and MITRE ATLAS reference
 - Tests cover: build_prompt with prior context and ATLAS injection
 
-### US-F29: MAESTRO Stage 6 prompt — Risk and Mitigation
+### US-F29: MAESTRO Stage 6 prompt — Risk and Mitigation *(deferred to future release)*
 
 **Description:** As a developer, I want a prompt template for the MAESTRO Risk and Mitigation stage with AI-specific countermeasures and remediation roadmap.
 
@@ -823,7 +823,7 @@ The assembler evaluates conditions against prior stage outputs using the same ke
 - Module exports `build_prompt(context: dict)` that injects Stages 1-5 outputs
 - Tests cover: build_prompt with prior stage context
 
-### US-F30: MAESTRO Stage 7 prompt — Report Consolidation
+### US-F30: MAESTRO Stage 7 prompt — Report Consolidation *(deferred to future release)*
 
 **Description:** As a developer, I want a prompt template for the MAESTRO report consolidation step.
 
@@ -836,7 +836,7 @@ The assembler evaluates conditions against prior stage outputs using the same ke
 - Module exports `build_prompt(context: dict)` that injects Stages 1-6 outputs
 - Tests cover: build_prompt with all stage outputs
 
-### US-F31: MAESTRO pack builder
+### US-F31: MAESTRO pack builder *(deferred to future release)*
 
 **Description:** As a developer, I want a pack builder function that assembles the MAESTRO framework pack.
 
@@ -888,7 +888,7 @@ The assembler evaluates conditions against prior stage outputs using the same ke
 - Test verifies context accumulation across 4 analysis stages
 - Tests pass
 
-### US-F35: End-to-end test for LINDDUN Pro pipeline
+### US-F35: End-to-end test for LINDDUN Pro pipeline *(deferred to future release)*
 
 **Description:** As a developer, I want an end-to-end test verifying the full LINDDUN Pro pipeline.
 
@@ -901,7 +901,7 @@ The assembler evaluates conditions against prior stage outputs using the same ke
 - Test verifies metadata includes `framework: "linddun"`
 - Tests pass
 
-### US-F36: End-to-end test for MAESTRO pipeline
+### US-F36: End-to-end test for MAESTRO pipeline *(deferred to future release)*
 
 **Description:** As a developer, I want an end-to-end test verifying the full MAESTRO pipeline.
 
