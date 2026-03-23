@@ -15,6 +15,23 @@
 - All `build_prompt` functions use the generic `StageContext` dataclass — no per-stage typed contexts.
 ---
 
+## 2026-03-23 - PASTA E2E test consolidation
+- Merged `tests/test_e2e.py` and `tests/test_e2e_pasta_regression.py` into `tests/test_e2e_pasta.py`
+- Deleted both source files; combined metadata assertions (required fields + `framework="pasta"` value) into one test; 10 tests total
+- Files changed: `tests/test_e2e_pasta.py` (new), `tests/test_e2e.py` (deleted), `tests/test_e2e_pasta_regression.py` (deleted)
+---
+
+## 2026-03-23 - US-F37
+- Created `tests/test_e2e_pasta_regression.py` with 9 regression tests for the full PASTA pipeline
+- Tests cover: all 8 deliverable filenames, Stage 4 OWASP Web Top 10 (always), OWASP API Top 10 (conditional on api_detected), OWASP LLM Top 10 (conditional on llm_detected), Stage 5 scanner snippets with patched `detect_scanners`, metadata `framework: "pasta"`
+- Stage 4 conditional tests work by writing API/LLM keywords into Stage 1 mock output; `evaluate_reference_conditions` searches all prior_outputs values combined
+- Scanner snippet tests patch `threatsmith.main.detect_scanners` to return a controlled `{"available": [...], "unavailable": [...]}` dict
+- Files changed: `tests/test_e2e_pasta_regression.py` (new)
+- **Learnings for future iterations:**
+  - To test OWASP conditional injection at stage N, write trigger keywords (e.g. "rest", "llm") into earlier stage mock outputs — the assembler combines all prior_outputs values for keyword detection
+  - Patch `threatsmith.main.detect_scanners` (not the module-level import) to control scanner availability in E2E tests
+---
+
 ## 2026-03-23 - US-F34
 - Created `tests/test_e2e_stride_4q.py` with 4 E2E tests for the full 4QF+STRIDE pipeline
 - Tests cover: all 5 deliverable files created, Stage 2 prompt contains STRIDE categories, metadata `framework: "stride-4q"`, context accumulation across all 4 analysis stages + report

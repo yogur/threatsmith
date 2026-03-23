@@ -630,8 +630,8 @@
         "Tests pass"
       ],
       "priority": 37,
-      "passes": false,
-      "notes": "Depends on US-F08 (PASTA pack), US-F32 (CLI), US-F33 (metadata). Regression gate — must run after all PASTA migration stories."
+      "passes": true,
+      "notes": "9 regression tests covering: all 8 PASTA deliverable filenames, Stage 4 OWASP Web/API/LLM conditional injection, Stage 5 scanner snippet injection, metadata framework='pasta'."
     }
   ]
 }
