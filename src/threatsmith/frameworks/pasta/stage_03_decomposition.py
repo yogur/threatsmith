@@ -211,8 +211,7 @@ and back to display
 
 ## OUTPUT REQUIREMENTS
 
-Write your analysis to `{output_dir}03-application-decomposition.md`. Create the \
-`{output_dir}` directory if it does not already exist.
+Write your analysis to `{output_dir}03-application-decomposition.md`.
 
 Structure your output with the five pillar headings as top-level sections \
 (## Use Case Identification, ## Actors Roles and Trust Levels, \

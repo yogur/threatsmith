@@ -279,8 +279,7 @@ analysis
 
 ## OUTPUT REQUIREMENTS
 
-Write your analysis to `threatmodel/06-attack-modeling.md`. Create the \
-`threatmodel/` directory if it does not already exist.
+Write your analysis to `{output_dir}06-attack-modeling.md`.
 
 Structure your output with the four pillar headings as top-level sections \
 (## Attack Surface Analysis, ## Attack Tree Development, \

@@ -105,7 +105,7 @@ class TestStagePrompt:
         assert "{prior_stages_section}" in STAGE_PROMPT
 
     def test_references_output_file(self):
-        assert "threatmodel/07-risk-and-impact-analysis.md" in STAGE_PROMPT
+        assert "{output_dir}07-risk-and-impact-analysis.md" in STAGE_PROMPT
 
     def test_contains_business_impact_qualification(self):
         assert "Business Impact Qualification and Quantification" in STAGE_PROMPT

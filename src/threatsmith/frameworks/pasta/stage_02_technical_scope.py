@@ -188,8 +188,7 @@ posture of the component accessing it
 
 ## OUTPUT REQUIREMENTS
 
-Write your analysis to `{output_dir}02-technical-scope.md`. Create the \
-`{output_dir}` directory if it does not already exist.
+Write your analysis to `{output_dir}02-technical-scope.md`.
 
 Structure your output with the six pillar headings as top-level sections \
 (## Project Boundary Definition, ## Technology Stack Mapping, \

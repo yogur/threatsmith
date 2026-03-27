@@ -284,8 +284,7 @@ explicit acceptance rationale
 
 ## OUTPUT REQUIREMENTS
 
-Write your analysis to `threatmodel/07-risk-and-impact-analysis.md`. Create the \
-`threatmodel/` directory if it does not already exist.
+Write your analysis to `{output_dir}07-risk-and-impact-analysis.md`.
 
 Structure your output with the five pillar headings as top-level sections \
 (## Business Impact Qualification and Quantification, ## Countermeasure \

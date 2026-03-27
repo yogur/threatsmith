@@ -108,8 +108,7 @@ code fence languages, emphasis patterns) to be consistent throughout the documen
 
 ## OUTPUT REQUIREMENTS
 
-Write the consolidated report to `{output_dir}05-report.md`. Create the \
-`{output_dir}` directory if it does not already exist.
+Write the consolidated report to `{output_dir}05-report.md`.
 
 Structure the report as follows:
 

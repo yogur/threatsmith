@@ -157,8 +157,7 @@ authentication flow).
 
 ## OUTPUT REQUIREMENTS
 
-Write your analysis to `{output_dir}01-system-model.md`. Create the \
-`{output_dir}` directory if it does not already exist.
+Write your analysis to `{output_dir}01-system-model.md`.
 
 Structure your output with clear top-level sections covering each analysis area. \
 Include the Mermaid DFD(s) in the appropriate section. Add subsections, tables, \

@@ -223,8 +223,7 @@ Synthesize findings across all pillars:
 
 ## OUTPUT REQUIREMENTS
 
-Write your analysis to `{output_dir}04-threat-analysis.md`. Create the \
-`{output_dir}` directory if it does not already exist.
+Write your analysis to `{output_dir}04-threat-analysis.md`.
 
 Structure your output with the four pillar headings as top-level sections \
 (## STRIDE Threat Analysis, ## Probabilistic Attack Scenario Analysis, \

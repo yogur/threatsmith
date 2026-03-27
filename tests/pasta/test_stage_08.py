@@ -110,7 +110,7 @@ class TestStagePrompt:
         assert "{prior_stages_section}" in STAGE_PROMPT
 
     def test_references_output_file(self):
-        assert "threatmodel/08-report.md" in STAGE_PROMPT
+        assert "{output_dir}08-report.md" in STAGE_PROMPT
 
     def test_is_not_a_pasta_stage(self):
         assert "NOT a PASTA stage" in STAGE_PROMPT

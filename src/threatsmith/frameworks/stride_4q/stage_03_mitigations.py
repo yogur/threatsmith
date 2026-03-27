@@ -124,8 +124,7 @@ Conduct your analysis in three phases:
 
 ## OUTPUT REQUIREMENTS
 
-Write your analysis to `{output_dir}03-mitigations.md`. Create the \
-`{output_dir}` directory if it does not already exist.
+Write your analysis to `{output_dir}03-mitigations.md`.
 
 Structure your output with clear sections:
 

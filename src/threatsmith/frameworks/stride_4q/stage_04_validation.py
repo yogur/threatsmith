@@ -125,8 +125,7 @@ missing from the system model
 
 ## OUTPUT REQUIREMENTS
 
-Write your analysis to `{output_dir}04-validation.md`. Create the \
-`{output_dir}` directory if it does not already exist.
+Write your analysis to `{output_dir}04-validation.md`.
 
 Structure your output with clear sections:
 

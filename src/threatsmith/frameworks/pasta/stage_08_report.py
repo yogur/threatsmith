@@ -109,8 +109,7 @@ code fence languages, emphasis patterns) to be consistent throughout the documen
 
 ## OUTPUT REQUIREMENTS
 
-Write the consolidated report to `threatmodel/08-report.md`. Create the \
-`threatmodel/` directory if it does not already exist.
+Write the consolidated report to `{output_dir}08-report.md`.
 
 Structure the report as follows:
 

@@ -125,8 +125,7 @@ and data flows — these are the targets for your STRIDE analysis
 
 ## OUTPUT REQUIREMENTS
 
-Write your analysis to `{output_dir}02-threat-identification.md`. Create the \
-`{output_dir}` directory if it does not already exist.
+Write your analysis to `{output_dir}02-threat-identification.md`.
 
 Structure your output with clear sections organized by component or by STRIDE \
 category — whichever produces clearer coverage for the application under analysis.
