@@ -59,7 +59,7 @@ def test_default_engine_is_claude_code(tmp_path):
     ):
         mock_get_engine.return_value = MagicMock()
         runner.invoke(app, [str(tmp_path)])
-    mock_get_engine.assert_called_once_with("claude-code")
+    mock_get_engine.assert_called_once_with("claude-code", verbose=False)
 
 
 def test_engine_option_codex(tmp_path):
@@ -80,7 +80,7 @@ def test_engine_option_codex(tmp_path):
     ):
         mock_get_engine.return_value = MagicMock()
         runner.invoke(app, [str(tmp_path), "--engine", "codex"])
-    mock_get_engine.assert_called_once_with("codex")
+    mock_get_engine.assert_called_once_with("codex", verbose=False)
 
 
 def test_output_dir_created(tmp_path):

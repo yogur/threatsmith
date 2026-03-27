@@ -17,7 +17,11 @@ class CodexEngine(Engine):
         cmd = ["codex", "exec", prompt]
         logger.debug("Running: codex exec <prompt> in %s", working_directory)
         try:
-            result = subprocess.run(cmd, cwd=working_directory)
+            run_kwargs: dict = {"cwd": working_directory}
+            if not self.verbose:
+                run_kwargs["stdout"] = subprocess.DEVNULL
+                run_kwargs["stderr"] = subprocess.DEVNULL
+            result = subprocess.run(cmd, **run_kwargs)
             return result.returncode
         except FileNotFoundError:
             logger.error(

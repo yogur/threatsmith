@@ -27,7 +27,29 @@ def test_claude_code_engine_constructs_correct_command():
     assert "--allowedTools" in cmd
     assert "Write(threatmodel/**)" in cmd
     assert "Edit(threatmodel/**)" in cmd
+    assert "--verbose" not in cmd
     assert call_args.kwargs["cwd"] == "/tmp/repo"
+    assert exit_code == 0
+
+
+def test_claude_code_engine_verbose_streams_json():
+    engine = ClaudeCodeEngine(verbose=True)
+    mock_proc = MagicMock()
+    mock_proc.stdout = iter([])
+    mock_proc.returncode = 0
+
+    with patch("subprocess.Popen", return_value=mock_proc) as mock_popen:
+        exit_code = engine.execute(
+            prompt="prompt",
+            working_directory="/tmp/repo",
+            output_dir="threatmodel",
+        )
+
+    cmd = mock_popen.call_args.args[0]
+    assert "--verbose" in cmd
+    assert "--output-format" in cmd
+    assert "stream-json" in cmd
+    assert "--include-partial-messages" in cmd
     assert exit_code == 0
 
 
@@ -95,6 +117,38 @@ def test_codex_engine_constructs_correct_command():
     assert cmd[2] == "fix the security issue"
     assert call_args.kwargs["cwd"] == "/tmp/repo"
     assert exit_code == 0
+
+
+def test_codex_engine_non_verbose_suppresses_output():
+    engine = CodexEngine(verbose=False)
+    mock_result = MagicMock()
+    mock_result.returncode = 0
+
+    with patch("subprocess.run", return_value=mock_result) as mock_run:
+        engine.execute(
+            prompt="prompt", working_directory="/tmp/repo", output_dir="threatmodel"
+        )
+
+    import subprocess
+
+    kwargs = mock_run.call_args.kwargs
+    assert kwargs["stdout"] == subprocess.DEVNULL
+    assert kwargs["stderr"] == subprocess.DEVNULL
+
+
+def test_codex_engine_verbose_does_not_suppress_output():
+    engine = CodexEngine(verbose=True)
+    mock_result = MagicMock()
+    mock_result.returncode = 0
+
+    with patch("subprocess.run", return_value=mock_result) as mock_run:
+        engine.execute(
+            prompt="prompt", working_directory="/tmp/repo", output_dir="threatmodel"
+        )
+
+    kwargs = mock_run.call_args.kwargs
+    assert "stdout" not in kwargs
+    assert "stderr" not in kwargs
 
 
 def test_codex_engine_returns_exit_code():
