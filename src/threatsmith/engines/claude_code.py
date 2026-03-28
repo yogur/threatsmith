@@ -6,6 +6,23 @@ from threatsmith.engines.base import Engine
 
 logger = logging.getLogger(__name__)
 
+_SCANNER_PERMISSIONS: dict[str, str] = {
+    "semgrep": "Bash(semgrep *)",
+    "trivy": "Bash(trivy *)",
+    "gitleaks": "Bash(gitleaks *)",
+}
+
+_ENGINE_CONSTRAINTS = """
+
+## ENGINE CONSTRAINTS
+
+You have full read access to the repository via your built-in file tools (Read, Grep, Glob).
+You can write and edit files in the output directory.
+You can run the security scanner commands specified in the prompt instructions.
+For any analysis that would typically require running scripts or interpreters, use your \
+reasoning capabilities directly instead.
+"""
+
 
 class ClaudeCodeEngine(Engine):
     def execute(
@@ -16,13 +33,21 @@ class ClaudeCodeEngine(Engine):
     ) -> int:
         """Invoke claude CLI in non-interactive prompt mode and return its exit code."""
         safe_dir = output_dir.rstrip("/")
+        allowed_tools = [f"Write({safe_dir}/**)", f"Edit({safe_dir}/**)"]
+        if self.scanner_names:
+            for name in self.scanner_names:
+                perm = _SCANNER_PERMISSIONS.get(name)
+                if perm:
+                    allowed_tools.append(perm)
+
+        full_prompt = prompt + _ENGINE_CONSTRAINTS
+
         cmd = [
             "claude",
             "-p",
-            prompt,
+            full_prompt,
             "--allowedTools",
-            f"Write({safe_dir}/**)",
-            f"Edit({safe_dir}/**)",
+            *allowed_tools,
         ]
         logger.debug("Running: claude -p <prompt> in %s", working_directory)
         try:

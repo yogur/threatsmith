@@ -59,7 +59,9 @@ def test_default_engine_is_claude_code(tmp_path):
     ):
         mock_get_engine.return_value = MagicMock()
         runner.invoke(app, [str(tmp_path)])
-    mock_get_engine.assert_called_once_with("claude-code", verbose=False)
+    mock_get_engine.assert_called_once_with(
+        "claude-code", verbose=False, scanner_names=None
+    )
 
 
 def test_engine_option_codex(tmp_path):
@@ -80,7 +82,33 @@ def test_engine_option_codex(tmp_path):
     ):
         mock_get_engine.return_value = MagicMock()
         runner.invoke(app, [str(tmp_path), "--engine", "codex"])
-    mock_get_engine.assert_called_once_with("codex", verbose=False)
+    mock_get_engine.assert_called_once_with("codex", verbose=False, scanner_names=None)
+
+
+def test_scanner_names_passed_to_engine(tmp_path):
+    mock_cls, mock_instance = _make_mock_orchestrator()
+    with (
+        patch("threatsmith.main.get_engine") as mock_get_engine,
+        patch("threatsmith.main.get_framework", return_value=MagicMock()),
+        patch("threatsmith.main.Orchestrator", mock_cls),
+        patch(
+            "threatsmith.main.detect_scanners",
+            return_value={
+                "available": ["semgrep", "trivy"],
+                "unavailable": ["gitleaks"],
+            },
+        ),
+        patch(
+            "threatsmith.main.generate_metadata",
+            return_value=MagicMock(commit_hash="abc"),
+        ),
+        patch("threatsmith.main.write_metadata"),
+    ):
+        mock_get_engine.return_value = MagicMock()
+        runner.invoke(app, [str(tmp_path)])
+    mock_get_engine.assert_called_once_with(
+        "claude-code", verbose=False, scanner_names=["semgrep", "trivy"]
+    )
 
 
 def test_output_dir_created(tmp_path):

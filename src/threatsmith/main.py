@@ -155,7 +155,9 @@ def main(
 
     # Run the pipeline
     logger.info("Starting %s pipeline for: %s", pack.display_name, path)
-    engine_instance = get_engine(engine, verbose=verbose)
+    engine_instance = get_engine(
+        engine, verbose=verbose, scanner_names=scanner_info["available"] or None
+    )
     orchestrator = Orchestrator(
         engine=engine_instance,
         repo_path=path,
