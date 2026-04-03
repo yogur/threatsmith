@@ -117,7 +117,8 @@ def test_codex_engine_constructs_correct_command():
 
     assert cmd[0] == "codex"
     assert cmd[1] == "exec"
-    assert cmd[2] == "fix the security issue"
+    assert cmd[2] == "--full-auto"
+    assert cmd[3] == "fix the security issue"
     assert call_args.kwargs["cwd"] == "/tmp/repo"
     assert exit_code == 0
 
@@ -282,7 +283,7 @@ def test_codex_engine_ignores_scanner_names():
         )
 
     cmd = mock_run.call_args.args[0]
-    assert cmd == ["codex", "exec", "prompt"]
+    assert cmd == ["codex", "exec", "--full-auto", "prompt"]
 
 
 def test_get_engine_passes_scanner_names():
