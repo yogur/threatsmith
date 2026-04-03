@@ -14,7 +14,7 @@ class CodexEngine(Engine):
         output_dir: str,
     ) -> int:
         """Invoke codex CLI in non-interactive exec mode and return its exit code."""
-        cmd = ["codex", "exec", prompt]
+        cmd = ["codex", "exec", "--full-auto", prompt]
         logger.debug("Running: codex exec <prompt> in %s", working_directory)
         try:
             run_kwargs: dict = {"cwd": working_directory}
