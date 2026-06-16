@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> **Pending architecture rewrite.** A planned release (v0.4.0 — "Threat Modeling as Agent Skills") will significantly change how this project works: framework prompts move out of Python and into distributable Agent Skills as the source of truth, the CLI drives *installed* skills per stage, prior-stage context is passed by file pointer (no XML injection), CLI-side reference conditions and scanner detection are removed, and a build step emits committed, CI-verified skills. See `tasks/threatsmith-skills-prd.md` and `tasks/stories.json`. **This is not yet implemented.** Until those stories land, the architecture below still describes the current codebase — but major sections (assembler/prompt assembly, `frameworks/references`, scanner detection, prior-stage injection, package structure) will need rewriting once the PRD is implemented. Treat this file as authoritative for the *current* code and the PRD as authoritative for the *target* design.
+
 ## Project Overview
 
 ThreatSmith is an AI-powered threat modeling engine supporting multiple methodologies (PASTA, 4QF+STRIDE) via a pluggable framework pack architecture. It wraps AI coding agents (Claude Code, Codex) to orchestrate a multi-stage threat modeling pipeline plus a report consolidation step, producing structured markdown deliverables.

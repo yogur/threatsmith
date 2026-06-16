@@ -1,0 +1,277 @@
+{
+  "project": "ThreatSmith v0.4.0 — Threat Modeling as Agent Skills",
+  "branchName": "feat/skills-transformation",
+  "description": "Repackage the threat modeling frameworks as distributable Agent Skills (source of truth), add from-code/from-docs/pair modes, refactor the CLI to drive installed skills per stage (Model B), and ship a source-agnostic secure-coding consumption skill.",
+  "sprintConfig": {
+    "checkpointEnabled": true
+  },
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Canonical shared reference content as markdown",
+      "description": "As a maintainer, I want shared reference material stored canonically as markdown so skills can bundle it from a single source of truth.",
+      "acceptanceCriteria": [
+        "STRIDE categories, OWASP Web/API/LLM/Mobile, and scanner-usage guidance each exist as canonical markdown files in one shared location.",
+        "Each reference file is self-contained and suitable for embedding into a skill's references/ directory.",
+        "The reference content reproduces the substance of the existing Python reference constants it replaces.",
+        "Tests pass"
+      ],
+      "sprint": 1,
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "4QF+STRIDE skill sources with three modes",
+      "description": "As a user, I want a threatsmith-stride-4q skill whose stages support from-code, from-docs, and pair modes so I can run the methodology directly in my coding agent.",
+      "acceptanceCriteria": [
+        "A threatsmith-stride-4q skill exists with a SKILL.md and one stage file per stage under references/stages/ (5 files incl. report), writing the existing output filenames (01-system-model … 05-report).",
+        "SKILL.md prompts the user to choose a mode (from-code, from-docs, pair) when none is supplied and honors a supplied mode.",
+        "Each stage reads prior outputs by path from the output directory rather than expecting inlined text.",
+        "Each stage includes natural-language conditional guidance for when to consult the API/LLM/Mobile references.",
+        "from-docs framing instructs the agent to discover local docs and to fetch invoker-pointed external context (e.g., tickets/Confluence via MCP) without hardcoded paths.",
+        "Invoking the skill directly in from-code mode against a sample repo produces all five deliverables.",
+        "Tests pass"
+      ],
+      "sprint": 1,
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "PASTA skill sources with three modes",
+      "description": "As a user, I want a threatsmith-pasta skill mirroring the stride-4q skill for the 7-stage PASTA methodology plus report.",
+      "acceptanceCriteria": [
+        "A threatsmith-pasta skill exists with a SKILL.md and one stage file per stage under references/stages/ (8 files incl. report), writing the existing output filenames.",
+        "Mode handling (from-code/from-docs/pair), file-pointer prior-output access, and conditional reference guidance match the stride-4q skill.",
+        "from-docs framing instructs the agent to discover local docs and fetch invoker-pointed external context without hardcoded paths.",
+        "Invoking the skill directly in from-code mode produces all eight deliverables.",
+        "Tests pass"
+      ],
+      "sprint": 1,
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Single-stage non-interactive skill entry point",
+      "description": "As the CLI orchestrator, I need each framework skill to execute exactly one stage non-interactively given the stage, mode, output dir, and prior-output location.",
+      "acceptanceCriteria": [
+        "Each framework skill can be invoked to run exactly one named stage non-interactively, given the stage, mode, output directory, and prior-output location.",
+        "A single-stage invocation writes only that stage's deliverable.",
+        "The single-stage output is consistent with the same stage produced during a full walkthrough.",
+        "Tests pass"
+      ],
+      "sprint": 2,
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Secure-coding consumption skill (plan / review)",
+      "description": "As an engineer, I want a threatsmith-secure skill that injects an existing threat model into planning and code review, working regardless of how the threat model was produced.",
+      "acceptanceCriteria": [
+        "A threatsmith-secure skill exists supporting plan and review modes, prompting for a mode when none is supplied.",
+        "plan mode emits a security augmentation layer (requirements/constraints/checklist) and does not overwrite or own the planning document, so it composes with external planning skills.",
+        "review mode reports threats and mitigations relevant to a provided diff/change set, flagging uncatalogued threats and missing required mitigations.",
+        "The skill reads a threat-model directory of markdown and requires neither ThreatSmith-specific filenames nor metadata.json.",
+        "The skill works against a hand-authored threat-model directory.",
+        "Tests pass"
+      ],
+      "sprint": 2,
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Skill build, reference sync, and committed artifacts",
+      "description": "As a maintainer, I want a build step that syncs each skill's references and writes self-contained skills to a committed, CI-verified location.",
+      "acceptanceCriteria": [
+        "A build step assembles each skill in self-contained form by syncing its required shared references into its references/ directory.",
+        "The build writes self-contained skills to a committed build location, and each built skill contains only the references it uses.",
+        "A committed built skill can be copied directly into an agent's skills directory and used without running a build.",
+        "Editing a canonical reference and rebuilding updates every skill that uses it.",
+        "CI runs the build and fails when the committed built skills differ from a fresh build.",
+        "Tests pass"
+      ],
+      "sprint": 2,
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "Orchestrator + assembler refactor to Model B with file-pointer context",
+      "description": "As a developer, I want the orchestrator to drive the installed skill per stage and pass prior context by file pointer so per-stage isolation is preserved with leaner context.",
+      "acceptanceCriteria": [
+        "For each stage, the orchestrator invokes the engine to run the named installed skill for that single stage in the selected mode.",
+        "The assembler composes a per-stage instruction (skill name, stage, mode, output directory, prior-output location) instead of assembling prompt text.",
+        "Prior-stage context is passed by file pointer; no prior-stage text is inlined into prompts.",
+        "The CLI no longer performs scanner detection (detect_scanners removed); scanner usage is delegated to the agent via the shared reference file.",
+        "Output validation against the framework's expected output filenames is preserved.",
+        "Tests pass"
+      ],
+      "sprint": 3,
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Framework packs reduced to orchestration metadata",
+      "description": "As a maintainer, I want the Python framework packs stripped of prompt strings and reduced to stage metadata pointing at the providing skill.",
+      "acceptanceCriteria": [
+        "Framework packs no longer contain STAGE_PROMPT constants or build_prompt functions.",
+        "Each pack retains stage order, expected output filenames, the report stage, and an identifier for its providing skill.",
+        "No prompt text remains in Python modules.",
+        "The framework registry, get_framework, and list_frameworks continue to work.",
+        "Tests pass"
+      ],
+      "sprint": 3,
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Retire conditional-injection logic",
+      "description": "As a maintainer, I want the keyword-matching conditional reference logic removed so reference selection is handled by the agent via in-prompt guidance.",
+      "acceptanceCriteria": [
+        "The keyword-matching conditional-injection utility (conditions.py and its api_detected/llm_detected logic) is removed.",
+        "No code path performs keyword matching to inject references.",
+        "Tests that referenced the removed logic are updated or removed.",
+        "Tests pass"
+      ],
+      "sprint": 3,
+      "priority": 9,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-010",
+      "title": "Built skills bundled as package data",
+      "description": "As a maintainer, I want the built skills shipped inside the package so the CLI distribution is self-contained and install-skills has a source to copy from.",
+      "acceptanceCriteria": [
+        "The built (self-contained) skill directories are included as package data in the built distribution.",
+        "The packaging process uses the committed/freshly-built skills so bundled skills are current.",
+        "Tests pass"
+      ],
+      "sprint": 4,
+      "priority": 10,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-011",
+      "title": "threatsmith install-skills command",
+      "description": "As a user, I want a command that installs the bundled skills into my agent's skills directory.",
+      "acceptanceCriteria": [
+        "threatsmith install-skills copies the bundled built skills into the engine's skills directory.",
+        "Re-running refreshes/overwrites an existing install.",
+        "The command reports what was installed and where.",
+        "The install target accounts for the selected engine.",
+        "Tests pass"
+      ],
+      "sprint": 4,
+      "priority": 11,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "Pre-run skill validation (validate-or-exit)",
+      "description": "As a user, I want the CLI to tell me to install skills if they're missing rather than failing obscurely mid-run.",
+      "acceptanceCriteria": [
+        "Before a run, the CLI verifies the skill required by the selected framework is installed.",
+        "If missing, the CLI exits with a clear message instructing the user to run threatsmith install-skills.",
+        "If present, the run proceeds normally.",
+        "Tests pass"
+      ],
+      "sprint": 4,
+      "priority": 12,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-013",
+      "title": "CLI --mode flag and metadata mode field",
+      "description": "As a user, I want to select from-code or from-docs on the CLI and have the mode recorded in metadata.",
+      "acceptanceCriteria": [
+        "--mode accepts from-code (default) and from-docs; pair is rejected with a message that pair is skill-only.",
+        "The selected mode is passed to each per-stage skill invocation.",
+        "metadata.json records the mode, and scanner-availability fields are no longer written.",
+        "Tests cover default mode, explicit from-docs, and rejection of pair.",
+        "Tests pass"
+      ],
+      "sprint": 4,
+      "priority": 13,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-014",
+      "title": "E2E — CLI drives stride-4q skill end to end",
+      "description": "As a developer, I want an end-to-end test that the CLI orchestrates the stride-4q skill through all stages via Model B with file-pointer context.",
+      "acceptanceCriteria": [
+        "With a mock engine, a full --framework stride-4q run produces all five deliverables.",
+        "Each stage invocation targets the named skill and a single stage in the selected mode.",
+        "metadata.json records framework stride-4q and the mode.",
+        "The orchestrator does not inline prior-stage text.",
+        "Tests pass"
+      ],
+      "sprint": 5,
+      "priority": 14,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-015",
+      "title": "E2E — PASTA regression via skills",
+      "description": "As a developer, I want an end-to-end test confirming PASTA still produces its eight deliverables under the skill-driven architecture.",
+      "acceptanceCriteria": [
+        "With a mock engine, a full --framework pasta run produces all eight deliverables with the original filenames.",
+        "metadata.json records framework pasta and the mode.",
+        "Tests pass"
+      ],
+      "sprint": 5,
+      "priority": 15,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-016",
+      "title": "E2E — consumption skill against a sample threat model",
+      "description": "As a developer, I want an end-to-end test that the consumption skill operates on a sample threat-model directory without ThreatSmith-specific metadata.",
+      "acceptanceCriteria": [
+        "plan mode produces a security augmentation output referencing a sample model's threats/mitigations.",
+        "review mode flags a planted unmitigated-threat gap in a sample diff.",
+        "Both modes run with no metadata.json present.",
+        "Tests pass"
+      ],
+      "sprint": 5,
+      "priority": 16,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-017",
+      "title": "Documentation update",
+      "description": "As a user, I want the README and docs updated to explain skills, modes, installation, and the consumption workflow.",
+      "acceptanceCriteria": [
+        "README documents install-skills, --mode, the three generation modes, and direct vs CLI usage.",
+        "README documents the secure-coding consumption skill (plan/review) and its composability with planning workflows.",
+        "README documents the first-run requirement to install skills as a change from prior versions.",
+        "Tests pass"
+      ],
+      "sprint": 5,
+      "priority": 17,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}
