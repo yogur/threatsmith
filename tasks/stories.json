@@ -52,8 +52,8 @@
       ],
       "sprint": 1,
       "priority": 3,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Authored threatsmith-pasta skill source (SKILL.md + 8 stage files under references/stages/) mirroring stride-4q: from-code/from-docs/pair SDLC-phase modes, file-pointer prior-output reads, conditional OWASP API/LLM/Mobile guidance at stage 04, scanners via references/scanners.md at stage 05. Writes existing PASTA output filenames (01-objectives … 08-report)."
     },
     {
       "id": "US-004",
