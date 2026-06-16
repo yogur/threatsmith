@@ -36,8 +36,8 @@
       ],
       "sprint": 1,
       "priority": 2,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Authored threatsmith-stride-4q skill source (SKILL.md + 5 stage files under references/stages/) with from-code/from-docs/pair mode handling, file-pointer prior-output reads, and conditional OWASP API/LLM/Mobile reference guidance."
     },
     {
       "id": "US-003",
