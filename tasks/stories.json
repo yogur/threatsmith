@@ -18,8 +18,8 @@
       ],
       "sprint": 1,
       "priority": 1,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Six canonical reference markdown files created in skills-src/_shared/references/ (stride-categories, owasp-web/api/llm/mobile-top-10, scanners)"
     },
     {
       "id": "US-002",
