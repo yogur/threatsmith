@@ -101,8 +101,8 @@
       ],
       "sprint": 2,
       "priority": 6,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Build logic in src/threatsmith/_build_skills.py (SKILL_SHARED_REFS dict + build_skills() function); scripts/build_skills.py CLI wrapper; build/skills/ committed artifacts generated; .github/workflows/build-skills-drift.yml CI drift guard; 14 tests in tests/test_build_skills.py covering all 5 substantive ACs."
     },
     {
       "id": "US-007",
