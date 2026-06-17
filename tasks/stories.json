@@ -84,8 +84,8 @@
       ],
       "sprint": 2,
       "priority": 5,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Authored threatsmith-secure consumption skill as a single self-contained SKILL.md under skills-src/threatsmith-secure/ (no synced references, per PRD §2.1). plan/review modes with mode-prompt when unsupplied; source-agnostic threat-model directory reading (extract substance not format, no required filenames, metadata.json optional/opportunistic for staleness only); plan emits an additive security augmentation layer that never owns/edits the planning doc; review reports against uncatalogued threats / missing required mitigations / weakened controls. Live agent verification deferred to US-016 (consumption E2E)."
     },
     {
       "id": "US-006",
