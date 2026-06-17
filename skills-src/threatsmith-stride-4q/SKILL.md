@@ -55,6 +55,8 @@ Work through the stages **in order**, within one session:
 
 Each stage is independently runnable. Given a stage to run, the mode, the output directory, and the location of prior outputs, open that stage's file and execute only it — reading whatever prior deliverables it needs from the output directory and writing only its own deliverable. A single-stage run must produce the same result it would as part of a full walkthrough.
 
+A single stage may be run interactively by a person, or **non-interactively** by an orchestrator that supplies the stage, mode, output directory, and prior-output location up front. When the invocation is non-interactive — the caller signals it, or there is simply no human available to answer — run to completion without pausing for input: if something is ambiguous or a prior deliverable the stage expects is missing, proceed with the best-supported interpretation and record the assumption in the deliverable rather than stopping to ask. When run interactively, you may ask clarifying questions — following the mode's framing — but only where something material is genuinely unclear and the answer would change the analysis; don't ask for its own sake when the available context already suffices.
+
 ## Stages
 
 | Stage | File | Deliverable |

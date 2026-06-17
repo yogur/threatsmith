@@ -67,8 +67,8 @@
       ],
       "sprint": 2,
       "priority": 4,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Single-stage entry point was largely delivered by the 'Running a single stage' sections authored in US-002/US-003. Added a conditional non-interactive contract to both SKILL.md files: a single stage may run interactively (person) or non-interactively (orchestrator-driven); when the invocation is non-interactive, run to completion without pausing — proceed with the best-supported interpretation and record assumptions instead of asking. Single-stage and interactivity kept orthogonal so US-007 can signal non-interactive in the per-stage instruction. Substantive ACs already met; orchestrator-side enforcement belongs to US-007, E2E to US-014/US-015."
     },
     {
       "id": "US-005",
