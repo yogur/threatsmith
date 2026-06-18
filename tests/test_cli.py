@@ -20,23 +20,6 @@ def _make_mock_orchestrator(exit_code: int = 0):
     return mock_cls, mock_instance
 
 
-def _cli_patches(**overrides):
-    """Return a context manager stack for CLI test patches."""
-    defaults = {
-        "get_engine": patch("threatsmith.main.get_engine", return_value=MagicMock()),
-        "get_framework": patch(
-            "threatsmith.main.get_framework", return_value=MagicMock()
-        ),
-        "generate_metadata": patch(
-            "threatsmith.main.generate_metadata",
-            return_value=MagicMock(commit_hash="abc"),
-        ),
-        "write_metadata": patch("threatsmith.main.write_metadata"),
-    }
-    defaults.update(overrides)
-    return defaults
-
-
 def test_default_engine_is_claude_code(tmp_path):
     mock_cls, mock_instance = _make_mock_orchestrator()
     with (

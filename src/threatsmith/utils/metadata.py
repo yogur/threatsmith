@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from threatsmith import __version__
-from threatsmith.frameworks.types import FrameworkPack
+from threatsmith.frameworks import FrameworkPack
 
 logger = logging.getLogger(__name__)
 

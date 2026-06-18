@@ -6,10 +6,11 @@ import logging
 import os
 from unittest.mock import MagicMock
 
+import pytest
+
 from threatsmith.engines.base import Engine
-from threatsmith.frameworks.pasta import build_pasta_pack
-from threatsmith.frameworks.types import FrameworkPack, StageSpec
-from threatsmith.orchestrator import Orchestrator
+from threatsmith.frameworks import PASTA, STRIDE_4Q, FrameworkPack, StageSpec
+from threatsmith.orchestrator import Orchestrator, compose_stage_instruction
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -46,7 +47,7 @@ def _write_stage_files(output_dir: str, stages: list[int] | None = None) -> None
 
 
 def _pasta():
-    return build_pasta_pack()
+    return PASTA
 
 
 # ---------------------------------------------------------------------------
@@ -507,3 +508,116 @@ def test_mock_pack_skill_name_in_instruction(tmp_path):
 
     for instruction in captured_instructions:
         assert "mock-skill" in instruction
+
+
+# ---------------------------------------------------------------------------
+# compose_stage_instruction — per-stage instruction composition (Model B)
+# ---------------------------------------------------------------------------
+
+
+def _stage(pack: FrameworkPack, number: int) -> StageSpec:
+    """Return the StageSpec with the given number from a pack."""
+    for s in list(pack.stages) + [pack.report_stage]:
+        if s.number == number:
+            return s
+    raise ValueError(f"No stage {number} in pack")
+
+
+class TestComposeStageInstruction:
+    @pytest.mark.parametrize("pack", [PASTA, STRIDE_4Q])
+    def test_every_stage_produces_nonempty_string(self, pack):
+        for stage in list(pack.stages) + [pack.report_stage]:
+            result = compose_stage_instruction(stage, pack)
+            assert isinstance(result, str) and result
+
+    @pytest.mark.parametrize(
+        "pack, expected_skill",
+        [(PASTA, "threatsmith-pasta"), (STRIDE_4Q, "threatsmith-stride-4q")],
+    )
+    def test_skill_name_in_instruction(self, pack, expected_skill):
+        result = compose_stage_instruction(_stage(pack, 1), pack)
+        assert expected_skill in result
+
+    def test_custom_skill_name_in_instruction(self):
+        pack = _make_mock_pack()  # skill_name="mock-skill"
+        result = compose_stage_instruction(pack.stages[0], pack)
+        assert "mock-skill" in result
+
+    @pytest.mark.parametrize("number, token", [(1, "01"), (4, "04")])
+    def test_stage_number_zero_padded(self, number, token):
+        result = compose_stage_instruction(_stage(PASTA, number), PASTA)
+        assert token in result
+
+    def test_stage_name_in_instruction(self):
+        stage = _stage(PASTA, 1)
+        assert stage.name in compose_stage_instruction(stage, PASTA)
+
+    def test_report_stage_name_in_instruction(self):
+        stage = _stage(STRIDE_4Q, 5)
+        assert stage.name in compose_stage_instruction(stage, STRIDE_4Q)
+
+    @pytest.mark.parametrize("mode", ["from-code", "from-docs", "pair"])
+    def test_mode_in_instruction(self, mode):
+        result = compose_stage_instruction(_stage(PASTA, 1), PASTA, mode=mode)
+        assert mode in result
+
+    def test_default_mode_is_from_code(self):
+        result = compose_stage_instruction(_stage(PASTA, 1), PASTA)
+        assert "from-code" in result
+
+    def test_custom_output_dir_in_instruction(self):
+        result = compose_stage_instruction(
+            _stage(PASTA, 1), PASTA, output_dir="custom_output"
+        )
+        assert "custom_output" in result
+
+    def test_trailing_slash_stripped_from_output_dir(self):
+        result = compose_stage_instruction(
+            _stage(PASTA, 1), PASTA, output_dir="threatmodel/"
+        )
+        assert "threatmodel//" not in result
+        assert "threatmodel" in result
+
+    def test_prior_output_location_referenced(self):
+        result = compose_stage_instruction(
+            _stage(PASTA, 2), PASTA, output_dir="threatmodel"
+        )
+        assert "threatmodel" in result
+
+    def test_no_inlined_prior_stage_content(self):
+        result = compose_stage_instruction(_stage(PASTA, 8), PASTA)
+        assert "<prior_stages>" not in result
+        assert "</prior_stages>" not in result
+
+    def test_non_interactive_signaled(self):
+        result = compose_stage_instruction(_stage(PASTA, 1), PASTA)
+        assert "non-interactive" in result
+        assert "pausing" in result or "completion" in result
+
+    @pytest.mark.parametrize(
+        "objectives, expected",
+        [
+            ({"business_objectives": "protect revenue"}, "protect revenue"),
+            ({"security_objectives": "PCI-DSS compliance"}, "PCI-DSS compliance"),
+        ],
+    )
+    def test_user_objectives_included(self, objectives, expected):
+        result = compose_stage_instruction(
+            _stage(PASTA, 1), PASTA, user_objectives=objectives
+        )
+        assert expected in result
+
+    @pytest.mark.parametrize(
+        "objectives",
+        [
+            None,
+            {},
+            {"business_objectives": None, "security_objectives": None},
+        ],
+    )
+    def test_empty_objectives_omitted(self, objectives):
+        result = compose_stage_instruction(
+            _stage(PASTA, 1), PASTA, user_objectives=objectives
+        )
+        assert "Business objectives:" not in result
+        assert "Security objectives:" not in result
