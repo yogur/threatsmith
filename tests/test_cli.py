@@ -27,10 +27,6 @@ def _cli_patches(**overrides):
         "get_framework": patch(
             "threatsmith.main.get_framework", return_value=MagicMock()
         ),
-        "detect_scanners": patch(
-            "threatsmith.main.detect_scanners",
-            return_value={"available": [], "unavailable": []},
-        ),
         "generate_metadata": patch(
             "threatsmith.main.generate_metadata",
             return_value=MagicMock(commit_hash="abc"),
@@ -48,10 +44,6 @@ def test_default_engine_is_claude_code(tmp_path):
         patch("threatsmith.main.get_framework", return_value=MagicMock()),
         patch("threatsmith.main.Orchestrator", mock_cls),
         patch(
-            "threatsmith.main.detect_scanners",
-            return_value={"available": [], "unavailable": []},
-        ),
-        patch(
             "threatsmith.main.generate_metadata",
             return_value=MagicMock(commit_hash="abc"),
         ),
@@ -59,9 +51,7 @@ def test_default_engine_is_claude_code(tmp_path):
     ):
         mock_get_engine.return_value = MagicMock()
         runner.invoke(app, [str(tmp_path)])
-    mock_get_engine.assert_called_once_with(
-        "claude-code", verbose=False, scanner_names=None
-    )
+    mock_get_engine.assert_called_once_with("claude-code", verbose=False)
 
 
 def test_engine_option_codex(tmp_path):
@@ -71,10 +61,6 @@ def test_engine_option_codex(tmp_path):
         patch("threatsmith.main.get_framework", return_value=MagicMock()),
         patch("threatsmith.main.Orchestrator", mock_cls),
         patch(
-            "threatsmith.main.detect_scanners",
-            return_value={"available": [], "unavailable": []},
-        ),
-        patch(
             "threatsmith.main.generate_metadata",
             return_value=MagicMock(commit_hash="abc"),
         ),
@@ -82,33 +68,7 @@ def test_engine_option_codex(tmp_path):
     ):
         mock_get_engine.return_value = MagicMock()
         runner.invoke(app, [str(tmp_path), "--engine", "codex"])
-    mock_get_engine.assert_called_once_with("codex", verbose=False, scanner_names=None)
-
-
-def test_scanner_names_passed_to_engine(tmp_path):
-    mock_cls, mock_instance = _make_mock_orchestrator()
-    with (
-        patch("threatsmith.main.get_engine") as mock_get_engine,
-        patch("threatsmith.main.get_framework", return_value=MagicMock()),
-        patch("threatsmith.main.Orchestrator", mock_cls),
-        patch(
-            "threatsmith.main.detect_scanners",
-            return_value={
-                "available": ["semgrep", "trivy"],
-                "unavailable": ["gitleaks"],
-            },
-        ),
-        patch(
-            "threatsmith.main.generate_metadata",
-            return_value=MagicMock(commit_hash="abc"),
-        ),
-        patch("threatsmith.main.write_metadata"),
-    ):
-        mock_get_engine.return_value = MagicMock()
-        runner.invoke(app, [str(tmp_path)])
-    mock_get_engine.assert_called_once_with(
-        "claude-code", verbose=False, scanner_names=["semgrep", "trivy"]
-    )
+    mock_get_engine.assert_called_once_with("codex", verbose=False)
 
 
 def test_output_dir_created(tmp_path):
@@ -118,10 +78,6 @@ def test_output_dir_created(tmp_path):
         patch("threatsmith.main.get_engine", return_value=MagicMock()),
         patch("threatsmith.main.get_framework", return_value=MagicMock()),
         patch("threatsmith.main.Orchestrator", mock_cls),
-        patch(
-            "threatsmith.main.detect_scanners",
-            return_value={"available": [], "unavailable": []},
-        ),
         patch(
             "threatsmith.main.generate_metadata",
             return_value=MagicMock(commit_hash="abc"),
@@ -149,10 +105,6 @@ def test_metadata_written_after_pipeline(tmp_path):
         patch("threatsmith.main.get_framework", return_value=MagicMock()),
         patch("threatsmith.main.Orchestrator", mock_orchestrator_cls),
         patch(
-            "threatsmith.main.detect_scanners",
-            return_value={"available": [], "unavailable": []},
-        ),
-        patch(
             "threatsmith.main.generate_metadata",
             return_value=MagicMock(commit_hash="abc"),
         ),
@@ -177,10 +129,6 @@ def test_business_and_security_objectives_passed(tmp_path):
         patch("threatsmith.main.get_engine", return_value=MagicMock()),
         patch("threatsmith.main.get_framework", return_value=MagicMock()),
         patch("threatsmith.main.Orchestrator", mock_cls),
-        patch(
-            "threatsmith.main.detect_scanners",
-            return_value={"available": [], "unavailable": []},
-        ),
         patch(
             "threatsmith.main.generate_metadata",
             return_value=MagicMock(commit_hash="abc"),
@@ -219,10 +167,6 @@ def test_verbose_flag_not_forwarded_to_orchestrator(tmp_path):
         patch("threatsmith.main.get_framework", return_value=MagicMock()),
         patch("threatsmith.main.Orchestrator", mock_cls),
         patch(
-            "threatsmith.main.detect_scanners",
-            return_value={"available": [], "unavailable": []},
-        ),
-        patch(
             "threatsmith.main.generate_metadata",
             return_value=MagicMock(commit_hash="abc"),
         ),
@@ -233,24 +177,24 @@ def test_verbose_flag_not_forwarded_to_orchestrator(tmp_path):
     assert "verbose" not in captured
 
 
-def test_detect_scanners_called(tmp_path):
+def test_no_scanner_detection_in_cli(tmp_path):
+    """CLI does not call detect_scanners; scanner detection is the agent's responsibility."""
     mock_cls, _ = _make_mock_orchestrator()
     with (
         patch("threatsmith.main.get_engine", return_value=MagicMock()),
         patch("threatsmith.main.get_framework", return_value=MagicMock()),
         patch("threatsmith.main.Orchestrator", mock_cls),
         patch(
-            "threatsmith.main.detect_scanners",
-            return_value={"available": ["semgrep"], "unavailable": []},
-        ) as mock_detect,
-        patch(
             "threatsmith.main.generate_metadata",
             return_value=MagicMock(commit_hash="abc"),
         ),
         patch("threatsmith.main.write_metadata"),
     ):
-        runner.invoke(app, [str(tmp_path)])
-    mock_detect.assert_called_once()
+        result = runner.invoke(app, [str(tmp_path)])
+
+    # If detect_scanners were still called it would import and execute;
+    # the clean pass here confirms the call is gone.
+    assert result.exit_code == 0
 
 
 def test_pipeline_exit_code_propagated(tmp_path):
@@ -259,10 +203,6 @@ def test_pipeline_exit_code_propagated(tmp_path):
         patch("threatsmith.main.get_engine", return_value=MagicMock()),
         patch("threatsmith.main.get_framework", return_value=MagicMock()),
         patch("threatsmith.main.Orchestrator", mock_cls),
-        patch(
-            "threatsmith.main.detect_scanners",
-            return_value={"available": [], "unavailable": []},
-        ),
         patch(
             "threatsmith.main.generate_metadata",
             return_value=MagicMock(commit_hash="abc"),
@@ -273,7 +213,7 @@ def test_pipeline_exit_code_propagated(tmp_path):
     assert result.exit_code == 1
 
 
-# --- US-F32: --framework flag and --list-frameworks ---
+# --- --framework flag and --list-frameworks ---
 
 
 def test_default_framework_is_stride_4q(tmp_path):
@@ -282,10 +222,6 @@ def test_default_framework_is_stride_4q(tmp_path):
         patch("threatsmith.main.get_engine", return_value=MagicMock()),
         patch("threatsmith.main.get_framework") as mock_get_framework,
         patch("threatsmith.main.Orchestrator", mock_cls),
-        patch(
-            "threatsmith.main.detect_scanners",
-            return_value={"available": [], "unavailable": []},
-        ),
         patch(
             "threatsmith.main.generate_metadata",
             return_value=MagicMock(commit_hash="abc"),
@@ -303,10 +239,6 @@ def test_explicit_framework_pasta(tmp_path):
         patch("threatsmith.main.get_engine", return_value=MagicMock()),
         patch("threatsmith.main.get_framework") as mock_get_framework,
         patch("threatsmith.main.Orchestrator", mock_cls),
-        patch(
-            "threatsmith.main.detect_scanners",
-            return_value={"available": [], "unavailable": []},
-        ),
         patch(
             "threatsmith.main.generate_metadata",
             return_value=MagicMock(commit_hash="abc"),
@@ -329,10 +261,6 @@ def test_invalid_framework_name_produces_error(tmp_path):
     with (
         patch("threatsmith.main.get_engine", return_value=MagicMock()),
         patch(
-            "threatsmith.main.detect_scanners",
-            return_value={"available": [], "unavailable": []},
-        ),
-        patch(
             "threatsmith.main.generate_metadata",
             return_value=MagicMock(commit_hash="abc"),
         ),
@@ -349,10 +277,6 @@ def test_config_file_framework_used_when_no_cli_flag(tmp_path):
         patch("threatsmith.main.get_engine", return_value=MagicMock()),
         patch("threatsmith.main.get_framework") as mock_get_framework,
         patch("threatsmith.main.Orchestrator", mock_cls),
-        patch(
-            "threatsmith.main.detect_scanners",
-            return_value={"available": [], "unavailable": []},
-        ),
         patch(
             "threatsmith.main.generate_metadata",
             return_value=MagicMock(commit_hash="abc"),
@@ -371,10 +295,6 @@ def test_cli_framework_overrides_config_file(tmp_path):
         patch("threatsmith.main.get_engine", return_value=MagicMock()),
         patch("threatsmith.main.get_framework") as mock_get_framework,
         patch("threatsmith.main.Orchestrator", mock_cls),
-        patch(
-            "threatsmith.main.detect_scanners",
-            return_value={"available": [], "unavailable": []},
-        ),
         patch(
             "threatsmith.main.generate_metadata",
             return_value=MagicMock(commit_hash="abc"),

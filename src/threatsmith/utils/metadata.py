@@ -22,8 +22,6 @@ class ThreatSmithMetadata:
     commit_hash: str
     branch: str
     timestamp: str
-    scanners_available: list[str]
-    scanners_unavailable: list[str]
     user_objectives: dict
 
     def to_dict(self) -> dict:
@@ -33,8 +31,6 @@ class ThreatSmithMetadata:
 def generate_metadata(
     engine_name: str,
     framework: FrameworkPack,
-    scanners_available: list[str],
-    scanners_unavailable: list[str],
     stages_completed: int = 0,
     user_objectives: dict | None = None,
 ) -> ThreatSmithMetadata:
@@ -44,15 +40,13 @@ def generate_metadata(
     Args:
         engine_name: Name of the AI engine used (e.g., 'claude-code', 'codex')
         framework: The FrameworkPack used for this run
-        scanners_available: List of available scanner names
-        scanners_unavailable: List of unavailable scanner names
         stages_completed: Number of pipeline stages that completed successfully
         user_objectives: Optional dict with 'business' and/or 'security' keys
 
     Returns:
         ThreatSmithMetadata dataclass with threatsmith_version, engine, framework,
         framework_display_name, stages_completed, commit_hash, branch, timestamp
-        (ISO 8601), scanners_available, scanners_unavailable, and user_objectives
+        (ISO 8601), and user_objectives
     """
     # Get commit hash
     try:
@@ -88,8 +82,6 @@ def generate_metadata(
         commit_hash=commit_hash,
         branch=branch,
         timestamp=timestamp,
-        scanners_available=scanners_available,
-        scanners_unavailable=scanners_unavailable,
         user_objectives=user_objectives or {},
     )
 

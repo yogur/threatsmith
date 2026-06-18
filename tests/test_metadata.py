@@ -17,7 +17,6 @@ _PASTA_FRAMEWORK = get_framework("pasta")
 def test_generate_metadata_returns_all_required_fields():
     """Test that generate_metadata returns all required fields with correct types."""
     with patch("subprocess.run") as mock_run:
-        # Mock git rev-parse HEAD
         mock_run.side_effect = [
             type("obj", (object,), {"stdout": "abc123def456\n", "returncode": 0})(),
             type("obj", (object,), {"stdout": "main\n", "returncode": 0})(),
@@ -26,8 +25,6 @@ def test_generate_metadata_returns_all_required_fields():
         metadata = generate_metadata(
             engine_name="claude-code",
             framework=_FRAMEWORK,
-            scanners_available=["semgrep", "trivy"],
-            scanners_unavailable=["gitleaks"],
             user_objectives={"business": "Assess web app security"},
         )
 
@@ -39,8 +36,6 @@ def test_generate_metadata_returns_all_required_fields():
         assert metadata.commit_hash
         assert metadata.branch
         assert metadata.timestamp
-        assert metadata.scanners_available is not None
-        assert metadata.scanners_unavailable is not None
         assert metadata.user_objectives is not None
 
         # Check types
@@ -49,9 +44,21 @@ def test_generate_metadata_returns_all_required_fields():
         assert isinstance(metadata.commit_hash, str)
         assert isinstance(metadata.branch, str)
         assert isinstance(metadata.timestamp, str)
-        assert isinstance(metadata.scanners_available, list)
-        assert isinstance(metadata.scanners_unavailable, list)
         assert isinstance(metadata.user_objectives, dict)
+
+
+def test_generate_metadata_no_scanner_fields():
+    """ThreatSmithMetadata does not include scanner availability fields."""
+    with patch("subprocess.run") as mock_run:
+        mock_run.side_effect = [
+            type("obj", (object,), {"stdout": "hash\n", "returncode": 0})(),
+            type("obj", (object,), {"stdout": "br\n", "returncode": 0})(),
+        ]
+
+        metadata = generate_metadata(engine_name="claude-code", framework=_FRAMEWORK)
+
+        assert not hasattr(metadata, "scanners_available")
+        assert not hasattr(metadata, "scanners_unavailable")
 
 
 def test_generate_metadata_captures_engine_name():
@@ -65,30 +72,9 @@ def test_generate_metadata_captures_engine_name():
         metadata = generate_metadata(
             engine_name="codex",
             framework=_PASTA_FRAMEWORK,
-            scanners_available=[],
-            scanners_unavailable=[],
         )
 
         assert metadata.engine == "codex"
-
-
-def test_generate_metadata_captures_scanners():
-    """Test that generate_metadata correctly captures available and unavailable scanners."""
-    with patch("subprocess.run") as mock_run:
-        mock_run.side_effect = [
-            type("obj", (object,), {"stdout": "hash\n", "returncode": 0})(),
-            type("obj", (object,), {"stdout": "br\n", "returncode": 0})(),
-        ]
-
-        metadata = generate_metadata(
-            engine_name="claude-code",
-            framework=_FRAMEWORK,
-            scanners_available=["trivy", "semgrep"],
-            scanners_unavailable=["gitleaks"],
-        )
-
-        assert metadata.scanners_available == ["trivy", "semgrep"]
-        assert metadata.scanners_unavailable == ["gitleaks"]
 
 
 def test_generate_metadata_captures_user_objectives():
@@ -106,8 +92,6 @@ def test_generate_metadata_captures_user_objectives():
         metadata = generate_metadata(
             engine_name="claude-code",
             framework=_FRAMEWORK,
-            scanners_available=[],
-            scanners_unavailable=[],
             user_objectives=objectives,
         )
 
@@ -117,7 +101,6 @@ def test_generate_metadata_captures_user_objectives():
 def test_generate_metadata_handles_git_failures():
     """Test that generate_metadata handles git command failures gracefully."""
     with patch("subprocess.run") as mock_run:
-        # Both git commands fail with CalledProcessError
         mock_run.side_effect = [
             Exception("git not found"),
             Exception("git not found"),
@@ -126,8 +109,6 @@ def test_generate_metadata_handles_git_failures():
         metadata = generate_metadata(
             engine_name="claude-code",
             framework=_FRAMEWORK,
-            scanners_available=[],
-            scanners_unavailable=[],
         )
 
         assert metadata.commit_hash == "unknown"
@@ -145,8 +126,6 @@ def test_generate_metadata_timestamp_is_iso8601():
         metadata = generate_metadata(
             engine_name="claude-code",
             framework=_FRAMEWORK,
-            scanners_available=[],
-            scanners_unavailable=[],
         )
 
         timestamp = metadata.timestamp
@@ -167,8 +146,6 @@ def test_write_metadata_creates_json_file():
             commit_hash="abc123",
             branch="main",
             timestamp="2026-03-13T12:00:00+00:00",
-            scanners_available=["trivy"],
-            scanners_unavailable=["semgrep", "gitleaks"],
             user_objectives={"business": "Test objectives"},
         )
 
@@ -183,6 +160,29 @@ def test_write_metadata_creates_json_file():
             loaded = json.load(f)
 
         assert loaded == metadata.to_dict()
+
+
+def test_write_metadata_json_has_no_scanner_fields():
+    """Serialized metadata.json must not contain scanner fields."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        metadata = ThreatSmithMetadata(
+            threatsmith_version="0.2.0",
+            engine="claude-code",
+            framework="stride-4q",
+            framework_display_name="4QF + STRIDE",
+            stages_completed=5,
+            commit_hash="abc123",
+            branch="main",
+            timestamp="2026-03-13T12:00:00+00:00",
+            user_objectives={},
+        )
+        write_metadata(tmpdir, metadata)
+
+        with open(Path(tmpdir) / "metadata.json") as f:
+            loaded = json.load(f)
+
+        assert "scanners_available" not in loaded
+        assert "scanners_unavailable" not in loaded
 
 
 def test_write_metadata_creates_directory_if_needed():
@@ -200,8 +200,6 @@ def test_write_metadata_creates_directory_if_needed():
             commit_hash="hash",
             branch="branch",
             timestamp="2026-03-13T12:00:00+00:00",
-            scanners_available=[],
-            scanners_unavailable=[],
             user_objectives={},
         )
 
@@ -222,8 +220,6 @@ def test_generate_metadata_json_serializable():
         metadata = generate_metadata(
             engine_name="claude-code",
             framework=_FRAMEWORK,
-            scanners_available=["trivy"],
-            scanners_unavailable=["semgrep"],
             user_objectives={"business": "objectives"},
         )
 
@@ -243,8 +239,6 @@ def test_generate_metadata_no_objectives_defaults_to_empty_dict():
         metadata = generate_metadata(
             engine_name="claude-code",
             framework=_FRAMEWORK,
-            scanners_available=[],
-            scanners_unavailable=[],
         )
 
         assert metadata.user_objectives == {}
@@ -261,8 +255,6 @@ def test_generate_metadata_framework_name_from_pack():
         metadata = generate_metadata(
             engine_name="claude-code",
             framework=_FRAMEWORK,
-            scanners_available=[],
-            scanners_unavailable=[],
         )
 
         assert metadata.framework == "stride-4q"
@@ -279,8 +271,6 @@ def test_generate_metadata_framework_display_name_from_pack():
         metadata = generate_metadata(
             engine_name="claude-code",
             framework=_FRAMEWORK,
-            scanners_available=[],
-            scanners_unavailable=[],
         )
 
         assert metadata.framework_display_name == "4QF + STRIDE"
@@ -297,8 +287,6 @@ def test_generate_metadata_stages_completed_default_zero():
         metadata = generate_metadata(
             engine_name="claude-code",
             framework=_FRAMEWORK,
-            scanners_available=[],
-            scanners_unavailable=[],
         )
 
         assert metadata.stages_completed == 0
@@ -315,8 +303,6 @@ def test_generate_metadata_stages_completed_explicit():
         metadata = generate_metadata(
             engine_name="claude-code",
             framework=_FRAMEWORK,
-            scanners_available=[],
-            scanners_unavailable=[],
             stages_completed=5,
         )
 
@@ -334,8 +320,6 @@ def test_generate_metadata_framework_and_display_name_in_json():
         metadata = generate_metadata(
             engine_name="claude-code",
             framework=_PASTA_FRAMEWORK,
-            scanners_available=[],
-            scanners_unavailable=[],
             stages_completed=8,
         )
 

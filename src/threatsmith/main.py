@@ -14,7 +14,6 @@ from threatsmith.frameworks import get_framework, list_frameworks
 from threatsmith.orchestrator import Orchestrator
 from threatsmith.utils.logging import configure_logging
 from threatsmith.utils.metadata import generate_metadata, write_metadata
-from threatsmith.utils.scanners import detect_scanners
 
 logger = logging.getLogger(__name__)
 
@@ -140,13 +139,6 @@ def main(
     abs_output_dir = os.path.join(path, output_dir)
     os.makedirs(abs_output_dir, exist_ok=True)
 
-    # Detect available scanners
-    scanner_info = detect_scanners()
-    logger.info(
-        "Scanners available: %s",
-        scanner_info["available"] if scanner_info["available"] else ["none"],
-    )
-
     # Build user objectives dict
     user_objectives = {
         "business_objectives": business_objectives,
@@ -155,15 +147,12 @@ def main(
 
     # Run the pipeline
     logger.info("Starting %s pipeline for: %s", pack.display_name, path)
-    engine_instance = get_engine(
-        engine, verbose=verbose, scanner_names=scanner_info["available"] or None
-    )
+    engine_instance = get_engine(engine, verbose=verbose)
     orchestrator = Orchestrator(
         engine=engine_instance,
         repo_path=path,
         pack=pack,
         output_dir=output_dir,
-        scanner_info=scanner_info,
         user_objectives=user_objectives,
     )
     exit_code = orchestrator.run()
@@ -172,8 +161,6 @@ def main(
     metadata = generate_metadata(
         engine_name=engine,
         framework=pack,
-        scanners_available=scanner_info["available"],
-        scanners_unavailable=scanner_info["unavailable"],
         stages_completed=orchestrator.stages_completed,
         user_objectives={
             "business": business_objectives,

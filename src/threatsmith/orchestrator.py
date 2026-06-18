@@ -6,7 +6,7 @@ import logging
 import os
 from dataclasses import dataclass, field
 
-from threatsmith.assembler import assemble_prompt
+from threatsmith.assembler import compose_stage_instruction
 from threatsmith.engines.base import Engine
 from threatsmith.frameworks.types import FrameworkPack, StageSpec
 
@@ -21,14 +21,14 @@ class Orchestrator:
     repo_path: str
     pack: FrameworkPack
     output_dir: str = "threatmodel"
-    scanner_info: dict | None = None
+    mode: str = "from-code"
     user_objectives: dict | None = None
-    _prior_outputs: dict[str, str] = field(default_factory=dict, init=False)
+    _stages_completed: int = field(default=0, init=False)
 
     @property
     def stages_completed(self) -> int:
         """Number of pipeline stages that completed successfully."""
-        return len(self._prior_outputs)
+        return self._stages_completed
 
     def _output_file_path(self, filename: str) -> str:
         """Absolute path to a deliverable file within the repo's output directory."""
@@ -40,20 +40,18 @@ class Orchestrator:
         Returns True on success, False on failure.
         """
         output_path = self._output_file_path(stage.output_file)
-        output_key = f"stage_{stage.number:02d}_output"
 
         logger.info("Stage %d — starting", stage.number)
 
-        prompt = assemble_prompt(
+        instruction = compose_stage_instruction(
             stage=stage,
             pack=self.pack,
-            prior_outputs=self._prior_outputs,
-            scanner_info=self.scanner_info,
-            user_objectives=self.user_objectives,
+            mode=self.mode,
             output_dir=self.output_dir,
+            user_objectives=self.user_objectives,
         )
 
-        exit_code = self.engine.execute(prompt, self.repo_path, self.output_dir)
+        exit_code = self.engine.execute(instruction, self.repo_path, self.output_dir)
 
         if exit_code != 0:
             logger.error(
@@ -70,17 +68,8 @@ class Orchestrator:
             )
             return False
 
-        # Success — read deliverable and accumulate context
-        with open(output_path) as fh:
-            content = fh.read()
-        self._prior_outputs[output_key] = content
-
+        self._stages_completed += 1
         logger.info("Stage %d — complete", stage.number)
-        logger.debug(
-            "Stage %d: accumulated context %d chars",
-            stage.number,
-            sum(len(v) for v in self._prior_outputs.values()),
-        )
         return True
 
     def run(self) -> int:

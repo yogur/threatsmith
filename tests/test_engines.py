@@ -99,6 +99,23 @@ def test_claude_code_engine_returns_exit_code():
     assert exit_code == 1
 
 
+def test_claude_code_engine_always_includes_scanner_permissions():
+    """ClaudeCodeEngine always grants scanner tool permissions so skills can run them."""
+    engine = ClaudeCodeEngine()
+    mock_result = MagicMock()
+    mock_result.returncode = 0
+
+    with patch("subprocess.run", return_value=mock_result) as mock_run:
+        engine.execute(
+            prompt="prompt", working_directory="/tmp/repo", output_dir="threatmodel"
+        )
+
+    cmd = mock_run.call_args.args[0]
+    assert "Bash(semgrep *)" in cmd
+    assert "Bash(trivy *)" in cmd
+    assert "Bash(gitleaks *)" in cmd
+
+
 def test_codex_engine_constructs_correct_command():
     engine = CodexEngine()
     mock_result = MagicMock()
@@ -185,57 +202,6 @@ def test_get_engine_raises_for_unknown_engine():
         get_engine("unknown-engine")
 
 
-# ---------------------------------------------------------------------------
-# Scanner permissions
-# ---------------------------------------------------------------------------
-
-
-def test_claude_code_engine_with_scanner_names():
-    engine = ClaudeCodeEngine(scanner_names=["semgrep", "trivy", "gitleaks"])
-    mock_result = MagicMock()
-    mock_result.returncode = 0
-
-    with patch("subprocess.run", return_value=mock_result) as mock_run:
-        engine.execute(
-            prompt="prompt", working_directory="/tmp/repo", output_dir="threatmodel"
-        )
-
-    cmd = mock_run.call_args.args[0]
-    assert "Bash(semgrep *)" in cmd
-    assert "Bash(trivy *)" in cmd
-    assert "Bash(gitleaks *)" in cmd
-
-
-def test_claude_code_engine_unknown_scanner_ignored():
-    engine = ClaudeCodeEngine(scanner_names=["unknown-tool"])
-    mock_result = MagicMock()
-    mock_result.returncode = 0
-
-    with patch("subprocess.run", return_value=mock_result) as mock_run:
-        engine.execute(
-            prompt="prompt", working_directory="/tmp/repo", output_dir="threatmodel"
-        )
-
-    cmd = mock_run.call_args.args[0]
-    bash_entries = [arg for arg in cmd if arg.startswith("Bash(")]
-    assert bash_entries == []
-
-
-def test_claude_code_engine_no_scanners_no_bash():
-    engine = ClaudeCodeEngine()
-    mock_result = MagicMock()
-    mock_result.returncode = 0
-
-    with patch("subprocess.run", return_value=mock_result) as mock_run:
-        engine.execute(
-            prompt="prompt", working_directory="/tmp/repo", output_dir="threatmodel"
-        )
-
-    cmd = mock_run.call_args.args[0]
-    bash_entries = [arg for arg in cmd if arg.startswith("Bash(")]
-    assert bash_entries == []
-
-
 def test_claude_code_engine_appends_engine_constraints_to_prompt():
     engine = ClaudeCodeEngine()
     mock_result = MagicMock()
@@ -253,40 +219,3 @@ def test_claude_code_engine_appends_engine_constraints_to_prompt():
     assert prompt_arg.startswith("original prompt")
     assert prompt_arg.endswith(_ENGINE_CONSTRAINTS)
     assert "## ENGINE CONSTRAINTS" in prompt_arg
-
-
-def test_claude_code_engine_verbose_includes_scanner_permissions():
-    engine = ClaudeCodeEngine(verbose=True, scanner_names=["semgrep"])
-    mock_proc = MagicMock()
-    mock_proc.stdout = iter([])
-    mock_proc.returncode = 0
-
-    with patch("subprocess.Popen", return_value=mock_proc) as mock_popen:
-        engine.execute(
-            prompt="prompt", working_directory="/tmp/repo", output_dir="threatmodel"
-        )
-
-    cmd = mock_popen.call_args.args[0]
-    assert "Bash(semgrep *)" in cmd
-    assert "## ENGINE CONSTRAINTS" in cmd[2]
-    assert "--verbose" in cmd
-
-
-def test_codex_engine_ignores_scanner_names():
-    engine = CodexEngine(scanner_names=["semgrep", "trivy"])
-    mock_result = MagicMock()
-    mock_result.returncode = 0
-
-    with patch("subprocess.run", return_value=mock_result) as mock_run:
-        engine.execute(
-            prompt="prompt", working_directory="/tmp/repo", output_dir="threatmodel"
-        )
-
-    cmd = mock_run.call_args.args[0]
-    assert cmd == ["codex", "exec", "--full-auto", "prompt"]
-
-
-def test_get_engine_passes_scanner_names():
-    engine = get_engine("claude-code", scanner_names=["semgrep"])
-    assert isinstance(engine, ClaudeCodeEngine)
-    assert engine.scanner_names == ["semgrep"]

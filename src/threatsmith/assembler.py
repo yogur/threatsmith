@@ -1,53 +1,50 @@
-"""Prompt assembler — framework-agnostic prompt assembly from stage specs."""
+"""Assembler — composes per-stage instructions for the engine to run an installed skill."""
 
-from threatsmith.frameworks.references.conditions import evaluate_reference_conditions
-from threatsmith.frameworks.types import FrameworkPack, StageContext, StageSpec
+from threatsmith.frameworks.types import FrameworkPack, StageSpec
 
 
-def assemble_prompt(
+def compose_stage_instruction(
     stage: StageSpec,
     pack: FrameworkPack,
-    prior_outputs: dict[str, str] | None = None,
-    scanner_info: dict | None = None,
-    user_objectives: dict | None = None,
+    mode: str = "from-code",
     output_dir: str = "threatmodel",
+    user_objectives: dict | None = None,
 ) -> str:
-    """Assemble a complete prompt for the given stage.
+    """Compose a per-stage instruction for Model B skill-driven execution.
+
+    The instruction names the installed skill, the stage to execute, the mode,
+    the output directory, and the location of prior stage outputs (by file pointer —
+    no prior-stage text is inlined).
 
     Args:
-        stage: The StageSpec to build a prompt for.
-        pack: The FrameworkPack that owns this stage.
-        prior_outputs: Mapping of stage output keys to markdown strings, e.g.
-                       {"stage_01_output": "...", "stage_02_output": "..."}.
-        scanner_info: Dict with "available" and "unavailable" scanner name lists,
-                      as returned by detect_scanners().
-        user_objectives: Dict with optional "business_objectives" and
-                         "security_objectives" strings.
-        output_dir: Output directory for deliverables (defaults to "threatmodel").
+        stage: The StageSpec to execute.
+        pack: The FrameworkPack that owns this stage (provides the skill name).
+        mode: Generation mode — 'from-code' or 'from-docs'.
+        output_dir: Output directory for deliverables (defaults to 'threatmodel').
+        user_objectives: Optional dict with 'business_objectives' and/or
+                         'security_objectives' strings.
 
     Returns:
-        The fully assembled prompt string ready for engine.execute().
+        A single instruction string ready for engine.execute().
     """
-    po = prior_outputs or {}
-    si = scanner_info or {}
-
-    # Evaluate reference conditions for this stage
-    references: list[str] = []
-    if stage.number in pack.reference_sets:
-        references = evaluate_reference_conditions(
-            pack.reference_sets[stage.number], po
-        )
-
-    # Populate scanners if this is a scanner-eligible stage
-    scanners_available = None
-    if stage.number in pack.scanner_stages:
-        scanners_available = si.get("available") or None
-
-    context = StageContext(
-        user_objectives=user_objectives or None,
-        prior_outputs=po,
-        scanners_available=scanners_available,
-        references=references,
+    safe_dir = output_dir.rstrip("/")
+    instruction = (
+        f"Use skill `{pack.skill_name}`. "
+        f"Run stage {stage.number:02d} ({stage.name}) in {mode} mode. "
+        f"Output directory: {safe_dir}/. "
+        f"Prior stage outputs, if any, are in {safe_dir}/ — read from there as needed. "
+        "This is a non-interactive single-stage run; proceed to completion without pausing."
     )
 
-    return stage.build_prompt(context, output_dir=output_dir)
+    objectives = user_objectives or {}
+    business = objectives.get("business_objectives") or None
+    security = objectives.get("security_objectives") or None
+
+    if business or security:
+        instruction += "\n\nUser context:"
+        if business:
+            instruction += f"\n- Business objectives: {business}"
+        if security:
+            instruction += f"\n- Security objectives: {security}"
+
+    return instruction

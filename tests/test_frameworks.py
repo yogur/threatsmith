@@ -15,7 +15,6 @@ def _make_stage(number: int) -> StageSpec:
         number=number,
         name=f"Stage {number}",
         output_file=f"0{number}-output.md",
-        build_prompt=lambda ctx: f"prompt {number}",
     )
 
 
@@ -28,8 +27,6 @@ def _make_pack(name: str, display_name: str) -> FrameworkPack:
         description=f"{display_name} description",
         stages=[stage],
         report_stage=report,
-        scanner_stages=[1],
-        reference_sets={1: [{"condition": "always", "value": "ref"}]},
     )
 
 
@@ -44,19 +41,14 @@ def clean_registry():
 
 class TestDataModelConstruction:
     def test_stage_spec_fields(self):
-        def fn(ctx):
-            return "prompt"
-
         stage = StageSpec(
             number=1,
             name="System Model",
             output_file="01-system-model.md",
-            build_prompt=fn,
         )
         assert stage.number == 1
         assert stage.name == "System Model"
         assert stage.output_file == "01-system-model.md"
-        assert stage.build_prompt is fn
 
     def test_framework_pack_fields(self):
         stage = _make_stage(1)
@@ -67,20 +59,14 @@ class TestDataModelConstruction:
             description="A lightweight framework",
             stages=[stage],
             report_stage=report,
-            scanner_stages=[1],
-            reference_sets={1: [{"condition": "always", "value": "STRIDE_CATEGORIES"}]},
         )
         assert pack.name == "stride-4q"
         assert pack.display_name == "4QF + STRIDE"
         assert pack.description == "A lightweight framework"
         assert pack.stages == [stage]
         assert pack.report_stage is report
-        assert pack.scanner_stages == [1]
-        assert pack.reference_sets == {
-            1: [{"condition": "always", "value": "STRIDE_CATEGORIES"}]
-        }
 
-    def test_framework_pack_defaults(self):
+    def test_framework_pack_skill_name_default(self):
         stage = _make_stage(1)
         pack = FrameworkPack(
             name="test",
@@ -89,13 +75,19 @@ class TestDataModelConstruction:
             stages=[stage],
             report_stage=stage,
         )
-        assert pack.scanner_stages == []
-        assert pack.reference_sets == {}
+        assert pack.skill_name == ""
 
-    def test_stage_spec_build_prompt_callable(self):
-        stage = _make_stage(2)
-        result = stage.build_prompt({"key": "value"})
-        assert result == "prompt 2"
+    def test_framework_pack_skill_name_set(self):
+        stage = _make_stage(1)
+        pack = FrameworkPack(
+            name="test",
+            display_name="Test",
+            description="desc",
+            stages=[stage],
+            report_stage=stage,
+            skill_name="my-skill",
+        )
+        assert pack.skill_name == "my-skill"
 
 
 class TestGetFramework:
@@ -148,3 +140,7 @@ class TestListFrameworks:
     def test_list_frameworks_each_has_description(self):
         packs = list_frameworks()
         assert all(p.description for p in packs)
+
+    def test_list_frameworks_each_has_skill_name(self):
+        packs = list_frameworks()
+        assert all(p.skill_name for p in packs)

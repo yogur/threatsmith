@@ -1,17 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from dataclasses import dataclass, field
-
-
-@dataclass
-class StageContext:
-    """Generic context passed to any stage's build_prompt function."""
-
-    user_objectives: dict[str, str] | None = None
-    prior_outputs: dict[str, str] = field(default_factory=dict)
-    scanners_available: list[str] | None = None
-    references: list[str] = field(default_factory=list)
+from dataclasses import dataclass
 
 
 @dataclass
@@ -19,7 +8,6 @@ class StageSpec:
     number: int
     name: str
     output_file: str
-    build_prompt: Callable
 
 
 @dataclass
@@ -29,8 +17,7 @@ class FrameworkPack:
     description: str
     stages: list[StageSpec]
     report_stage: StageSpec
-    scanner_stages: list[int] = field(default_factory=list)
-    reference_sets: dict[int, list[dict]] = field(default_factory=dict)
+    skill_name: str = ""
 
 
 _REGISTRY: dict[str, FrameworkPack] = {}

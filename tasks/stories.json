@@ -118,8 +118,8 @@
       ],
       "sprint": 3,
       "priority": 7,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Replaced assemble_prompt() with compose_stage_instruction() in assembler.py (skill name + stage + mode + output_dir + prior-output location, no inlined text). Orchestrator refactored: scanner_info removed, mode field added, _stages_completed counter replaces _prior_outputs dict. detect_scanners() and utils/scanners.py deleted; scanner_names removed from Engine base, ClaudeCodeEngine, and get_engine(). ThreatSmithMetadata and generate_metadata() stripped of scanner fields. skill_name added to FrameworkPack; pack builders set threatsmith-stride-4q / threatsmith-pasta. All affected tests updated/rewritten. 473 tests pass."
     },
     {
       "id": "US-008",
@@ -134,8 +134,8 @@
       ],
       "sprint": 3,
       "priority": 8,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Removed build_prompt callable from StageSpec and StageContext dataclass from types.py. Deleted frameworks/pasta/ and frameworks/stride_4q/ package directories; replaced with flat frameworks/pasta.py and frameworks/stride_4q.py. Deleted stage test subdirectories tests/pasta/ and tests/stride_4q/; moved pack tests to tests/test_stride_4q_pack.py. Updated cross-cutting tests (test_frameworks.py, test_assembler.py, test_orchestrator.py) to remove all build_prompt and StageContext references. 177 tests pass."
     },
     {
       "id": "US-009",
@@ -149,8 +149,8 @@
       ],
       "sprint": 3,
       "priority": 9,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Deleted conditions.py, owasp.py, scanner_snippets.py, stride_categories.py (all dead after pack cleanup), and test_references.py + test_stride_categories.py (latter tested a string constant, violating project convention). Removed reference_sets and scanner_stages from FrameworkPack and both pack builders. 146 tests pass."
     },
     {
       "id": "US-010",
