@@ -179,8 +179,8 @@
       ],
       "sprint": 4,
       "priority": 11,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Restructured the CLI into subcommands: 'threatsmith model <path>' (the run; path now required), 'threatsmith skills install', and '--list-frameworks' on the root callback. Added abstract Engine.skills_dir (~/.claude/skills for claude-code, ~/.codex/skills for codex) so the install target accounts for the engine. New _install_skills.py: install_skills(skills_dir, source=None) copies each bundled skill into skills_dir/<name>, refreshing per-skill (rmtree+copytree) without wiping unrelated skills; reports each skill + total via logger. Tests: skills-install CLI tests in test_cli.py, install_skills unit tests in test_install_skills.py, engine skills_dir tests in test_engines.py; all existing CLI/E2E invocations updated to the 'model' subcommand. Also added a companion 'threatsmith skills list' (list_skill_statuses + SkillStatus) showing each bundled skill's install status per engine — sets up US-012's installed-check. '--engine' is required (no default) on all commands (model + skills install/list) — it selects a filesystem destination for the skills commands and is required on model for consistency; no_args_is_help shows help on bare invocations instead of a terse missing-option error. 142 tests pass."
     },
     {
       "id": "US-012",

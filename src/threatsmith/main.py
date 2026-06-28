@@ -9,6 +9,7 @@ from typing import Annotated
 
 import typer
 
+from threatsmith._install_skills import install_skills, list_skill_statuses
 from threatsmith.engines import get_engine
 from threatsmith.frameworks import get_framework, list_frameworks
 from threatsmith.orchestrator import Orchestrator
@@ -19,6 +20,12 @@ logger = logging.getLogger(__name__)
 
 
 app = typer.Typer(add_completion=False)
+skills_app = typer.Typer(
+    add_completion=False,
+    no_args_is_help=True,
+    help="Manage ThreatSmith agent skills.",
+)
+app.add_typer(skills_app, name="skills")
 
 
 _LOGO_LINES = [
@@ -71,18 +78,9 @@ def _load_config(path: str) -> dict:
     return config
 
 
-@app.command()
-def main(
-    path: Annotated[
-        str | None, typer.Argument(help="Path to the target repository")
-    ] = None,
-    engine: Annotated[
-        str, typer.Option(help="AI engine to use ('claude-code' or 'codex')")
-    ] = "claude-code",
-    framework: Annotated[
-        str | None,
-        typer.Option(help="Threat modeling framework to use", show_default="stride-4q"),
-    ] = None,
+@app.callback(invoke_without_command=True)
+def _root(
+    ctx: typer.Context,
     list_frameworks_flag: Annotated[
         bool,
         typer.Option(
@@ -91,6 +89,32 @@ def main(
             is_eager=True,
         ),
     ] = False,
+) -> None:
+    """ThreatSmith — AI-powered threat modeling engine."""
+    if list_frameworks_flag:
+        print("Available frameworks:")
+        for pack in list_frameworks():
+            print(f"  {pack.name:<12} {pack.display_name} — {pack.description}")
+        raise typer.Exit()
+
+    if ctx.invoked_subcommand is None:
+        print(ctx.get_help())
+        raise typer.Exit()
+
+
+@app.command(no_args_is_help=True)
+def model(
+    path: Annotated[str, typer.Argument(help="Path to the target repository")],
+    engine: Annotated[
+        str,
+        typer.Option(
+            help="AI engine to use ('claude-code' or 'codex')", show_default=False
+        ),
+    ],
+    framework: Annotated[
+        str | None,
+        typer.Option(help="Threat modeling framework to use", show_default="stride-4q"),
+    ] = None,
     business_objectives: Annotated[
         str | None,
         typer.Option(help="Optional business objectives to inject into the analysis"),
@@ -106,18 +130,8 @@ def main(
         bool, typer.Option("-v", "--verbose", help="Enable verbose logging")
     ] = False,
 ) -> None:
-    """Run ThreatSmith threat modeling pipeline against a repository."""
+    """Produce a threat model for a repository by driving the installed skill."""
     configure_logging(verbose)
-
-    if list_frameworks_flag:
-        print("Available frameworks:")
-        for pack in list_frameworks():
-            print(f"  {pack.name:<12} {pack.display_name} — {pack.description}")
-        raise SystemExit(0)
-
-    if path is None:
-        logger.error("Missing argument: PATH")
-        raise SystemExit(1)
 
     _print_logo()
     if not os.path.isdir(path):
@@ -171,3 +185,70 @@ def main(
     logger.debug("Metadata written to: %s", abs_output_dir)
 
     raise SystemExit(exit_code)
+
+
+@skills_app.command("install", no_args_is_help=True)
+def skills_install(
+    engine: Annotated[
+        str,
+        typer.Option(
+            help="AI engine whose skills directory to install into "
+            "('claude-code' or 'codex')",
+            show_default=False,
+        ),
+    ],
+    verbose: Annotated[
+        bool, typer.Option("-v", "--verbose", help="Enable verbose logging")
+    ] = False,
+) -> None:
+    """Install (or refresh) the bundled ThreatSmith skills for the selected engine."""
+    configure_logging(verbose)
+
+    try:
+        engine_instance = get_engine(engine, verbose=verbose)
+    except ValueError as exc:
+        logger.error("%s", exc)
+        raise SystemExit(1)
+
+    skills_dir = engine_instance.skills_dir
+    try:
+        installed = install_skills(skills_dir)
+    except FileNotFoundError as exc:
+        logger.error("%s", exc)
+        raise SystemExit(1)
+
+    for skill in installed:
+        logger.info("Installed %s -> %s", skill.name, skill.destination)
+    logger.info("Installed %d skill(s) into %s", len(installed), skills_dir)
+
+
+@skills_app.command("list", no_args_is_help=True)
+def skills_list(
+    engine: Annotated[
+        str,
+        typer.Option(
+            help="AI engine whose skills directory to check ('claude-code' or 'codex')",
+            show_default=False,
+        ),
+    ],
+) -> None:
+    """List the bundled skills and whether they are installed for the engine."""
+    configure_logging(False)
+
+    try:
+        engine_instance = get_engine(engine, verbose=False)
+    except ValueError as exc:
+        logger.error("%s", exc)
+        raise SystemExit(1)
+
+    skills_dir = engine_instance.skills_dir
+    try:
+        statuses = list_skill_statuses(skills_dir)
+    except FileNotFoundError as exc:
+        logger.error("%s", exc)
+        raise SystemExit(1)
+
+    print(f"Bundled skills (install target: {skills_dir}):")
+    for status in statuses:
+        marker = "installed" if status.installed else "not installed"
+        print(f"  {status.name:<24} [{marker}]")

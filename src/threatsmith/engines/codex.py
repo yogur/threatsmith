@@ -1,5 +1,6 @@
 import logging
 import subprocess
+from pathlib import Path
 
 from threatsmith.engines.base import Engine
 
@@ -7,6 +8,10 @@ logger = logging.getLogger(__name__)
 
 
 class CodexEngine(Engine):
+    @property
+    def skills_dir(self) -> Path:
+        return Path.home() / ".codex" / "skills"
+
     def execute(
         self,
         prompt: str,

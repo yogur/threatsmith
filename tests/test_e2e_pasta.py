@@ -74,7 +74,10 @@ def test_pasta_full_pipeline_creates_all_deliverables(tmp_path):
     mock_engine = _make_writing_engine(output_dir)
 
     with patch("threatsmith.main.get_engine", return_value=mock_engine):
-        result = runner.invoke(app, [str(tmp_path), "--framework", "pasta"])
+        result = runner.invoke(
+            app,
+            ["model", str(tmp_path), "--engine", "claude-code", "--framework", "pasta"],
+        )
 
     assert result.exit_code == 0
     for filename in _STAGE_FILENAMES:
@@ -110,7 +113,10 @@ def test_pasta_instructions_name_skill(tmp_path):
     engine.execute.side_effect = execute_side_effect
 
     with patch("threatsmith.main.get_engine", return_value=engine):
-        result = runner.invoke(app, [str(tmp_path), "--framework", "pasta"])
+        result = runner.invoke(
+            app,
+            ["model", str(tmp_path), "--engine", "claude-code", "--framework", "pasta"],
+        )
 
     assert result.exit_code == 0
     assert len(captured_instructions) == 8
@@ -140,7 +146,10 @@ def test_pasta_instructions_do_not_inline_prior_stage_content(tmp_path):
     engine.execute.side_effect = execute_side_effect
 
     with patch("threatsmith.main.get_engine", return_value=engine):
-        result = runner.invoke(app, [str(tmp_path), "--framework", "pasta"])
+        result = runner.invoke(
+            app,
+            ["model", str(tmp_path), "--engine", "claude-code", "--framework", "pasta"],
+        )
 
     assert result.exit_code == 0
     for idx, instruction in enumerate(captured_instructions[1:], start=1):
@@ -159,7 +168,10 @@ def test_pasta_metadata_json_created_with_required_fields(tmp_path):
     mock_engine = _make_writing_engine(output_dir)
 
     with patch("threatsmith.main.get_engine", return_value=mock_engine):
-        runner.invoke(app, [str(tmp_path), "--framework", "pasta"])
+        runner.invoke(
+            app,
+            ["model", str(tmp_path), "--engine", "claude-code", "--framework", "pasta"],
+        )
 
     metadata_path = tmp_path / output_dir / "metadata.json"
     assert metadata_path.is_file(), "metadata.json was not created"
@@ -181,7 +193,10 @@ def test_pasta_metadata_has_no_scanner_fields(tmp_path):
     mock_engine = _make_writing_engine(output_dir)
 
     with patch("threatsmith.main.get_engine", return_value=mock_engine):
-        runner.invoke(app, [str(tmp_path), "--framework", "pasta"])
+        runner.invoke(
+            app,
+            ["model", str(tmp_path), "--engine", "claude-code", "--framework", "pasta"],
+        )
 
     metadata_path = tmp_path / output_dir / "metadata.json"
     assert metadata_path.is_file()

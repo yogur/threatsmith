@@ -1,6 +1,7 @@
 import json
 import logging
 import subprocess
+from pathlib import Path
 
 from threatsmith.engines.base import Engine
 
@@ -21,6 +22,10 @@ reasoning capabilities directly instead.
 
 
 class ClaudeCodeEngine(Engine):
+    @property
+    def skills_dir(self) -> Path:
+        return Path.home() / ".claude" / "skills"
+
     def execute(
         self,
         prompt: str,

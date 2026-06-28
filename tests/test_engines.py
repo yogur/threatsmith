@@ -202,6 +202,24 @@ def test_get_engine_raises_for_unknown_engine():
         get_engine("unknown-engine")
 
 
+def test_claude_code_engine_skills_dir():
+    from pathlib import Path
+
+    engine = ClaudeCodeEngine()
+    assert engine.skills_dir == Path.home() / ".claude" / "skills"
+
+
+def test_codex_engine_skills_dir():
+    from pathlib import Path
+
+    engine = CodexEngine()
+    assert engine.skills_dir == Path.home() / ".codex" / "skills"
+
+
+def test_engines_have_distinct_skills_dirs():
+    assert ClaudeCodeEngine().skills_dir != CodexEngine().skills_dir
+
+
 def test_claude_code_engine_appends_engine_constraints_to_prompt():
     engine = ClaudeCodeEngine()
     mock_result = MagicMock()

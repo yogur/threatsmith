@@ -4,9 +4,11 @@
 > distributable Agent Skills (the source of truth), the CLI drives *installed* skills per
 > stage (Model B) passing prior context by file pointer, framework packs are thin
 > orchestration metadata, and CLI-side reference conditions + scanner detection are gone.
-> **Still pending (sprints 4–5, US-010…US-017):** bundling built skills as package data,
-> the `install-skills` command, pre-run skill validation, the `--mode` CLI flag + metadata
-> `mode` field, E2E coverage, and docs. See `tasks/threatsmith-skills-prd.md` and
+> Built skills are bundled as package data (US-010) and the CLI now exposes subcommands —
+> `threatsmith model <path>` runs a threat model and `threatsmith skills install` installs
+> the bundled skills into the selected engine's skills directory (US-011).
+> **Still pending (sprints 4–5, US-012…US-017):** pre-run skill validation, the `--mode`
+> CLI flag + metadata `mode` field, E2E coverage, and docs. See `tasks/threatsmith-skills-prd.md` and
 > `tasks/stories.json`. This file describes the *current* code; the PRD is authoritative
 > for the remaining target design.
 
@@ -98,11 +100,17 @@ _build_skills.py     ← stdlib only (shutil/pathlib)
 - **Frozen packs**: `StageSpec` / `FrameworkPack` are `frozen=True`. The built-in `STRIDE_4Q` / `PASTA` singletons are safe to share; construct a fresh pack in tests when you need different field values.
 - **Logging**: modules use `logger = logging.getLogger(__name__)`. CLI configures via `configure_logging(verbose)` in `utils/logging.py`. DEBUG = verbose, INFO = progress, WARNING/ERROR = failures.
 - **metadata.json**: `generate_metadata(engine_name, framework, stages_completed, user_objectives)` returns a `ThreatSmithMetadata` dataclass (no scanner fields). Written *after* the run so `stages_completed` is accurate. `write_metadata(output_dir, metadata)` serializes to JSON. Provenance only — no consumer is required to read it.
+- **CLI structure**: `app` is a Typer app with a root callback (`_root`) carrying the eager `--list-frameworks` flag, a `model` command (the run; `path` is a required argument), and a `skills` sub-Typer with `install` (copies bundled skills into the engine's `skills_dir`) and `list` (shows each bundled skill and whether it is installed for the engine). Add new top-level verbs as `@app.command()`; group skill-management verbs under `skills_app`. The console-script entry point is the `app` object (`threatsmith.main:app`), so renaming command functions is safe.
+- **Engine install target**: each `Engine` exposes a `skills_dir` property (abstract on the base) — `~/.claude/skills` for claude-code, `~/.codex/skills` for codex. `skills install` resolves the engine, reads `skills_dir`, and calls `install_skills()`. This is how "the install target accounts for the selected engine."
+- **`--engine` is required on all commands (no default)** — `model`, `skills install`, `skills list`. For the skills commands the engine selects a filesystem destination, so a default would silently target the wrong agent; `model` requires it too for consistency. Required options use the Annotated form with no `= default` and `show_default=False` (the latter suppresses Typer's cosmetic `[default: None]` line). Don't reintroduce a default without revisiting the footgun.
+- **`no_args_is_help=True`** is set on `model`, `skills install`, `skills list`, and the `skills` group, so a bare invocation prints help (with the required `--engine`) instead of a terse missing-option error. A *partial* invocation (some args, still missing `--engine`) keeps the specific error — the intended CLI-UX behavior (don't dump full help on every error; do show help when there's nothing actionable). **Requires `typer>=0.19.2`**: in 0.16 `no_args_is_help` on a command with a required option renders help followed by an empty error panel (and a spurious `(env var: 'None')` in the partial-input error). The dependency pin in `pyproject.toml` documents this.
+- **Skill install/list**: `_install_skills.py` holds both. `install_skills(skills_dir, source=None)` copies each bundled skill dir into `skills_dir/<name>`, removing an existing install of that skill first (clean refresh) but never wiping the whole `skills_dir` (other skills survive); returns `list[InstalledSkill]`. `list_skill_statuses(skills_dir, source=None)` returns `list[SkillStatus]` (name, installed, destination) — a skill is "installed" when `skills_dir/<name>` is a directory; this is the same check US-012 pre-run validation should use. Both default `source` to `get_bundled_skills_path()`; tests pass a fake source tree.
 - **CLI config**: `_load_config(path)` reads `.threatsmith.yml` from the target repo (trivial line-by-line parser, no PyYAML). `--framework` defaults to the config value or `"stride-4q"`. `--list-frameworks` prints registered packs and exits.
 
 ## Testing Patterns
 
-- Tests live in `tests/` at root level. Current files: `test_frameworks.py`, `test_stride_4q_pack.py`, `test_orchestrator.py` (which also holds the `compose_stage_instruction` tests), `test_engines.py`, `test_cli.py`, `test_metadata.py`, `test_build_skills.py`, `test_package.py`, and the E2E pair `test_e2e_pasta.py` / `test_e2e_stride_4q.py`.
+- Tests live in `tests/` at root level. Current files: `test_frameworks.py`, `test_stride_4q_pack.py`, `test_orchestrator.py` (which also holds the `compose_stage_instruction` tests), `test_engines.py`, `test_cli.py`, `test_metadata.py`, `test_build_skills.py`, `test_package_data.py`, `test_install_skills.py`, and the E2E pair `test_e2e_pasta.py` / `test_e2e_stride_4q.py`.
+- **CLI invocation in tests**: the run command is a subcommand — invoke it as `runner.invoke(app, ["model", str(tmp_path), "--engine", "claude-code", ...])`, and skills commands as `["skills", "install", "--engine", ...]` / `["skills", "list", "--engine", ...]`. `--engine` is required, so omitting it errors (exit 2) — happy-path tests must pass it. Only `--list-frameworks` is a bare top-level flag (`runner.invoke(app, ["--list-frameworks"])`). Because of `no_args_is_help`, a *bare* subcommand invocation returns help (exit 2), not a missing-arg error; to assert the required-engine error, pass another arg (e.g. `["skills", "install", "--verbose"]`) or, for `model`, a path with no `--engine`.
 - Do not write tests for string constants — test logic and behavior only.
 - Use `@pytest.mark.parametrize` for tests that share structure with different inputs (e.g. the instruction-composition assertions).
 - Split a test file proactively as it approaches ~800 lines.
