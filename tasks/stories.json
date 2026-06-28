@@ -163,8 +163,8 @@
       ],
       "sprint": 4,
       "priority": 10,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "force-include in pyproject.toml maps build/skills/ → threatsmith/_skills/ in the wheel; get_bundled_skills_path() in _skills_data.py returns the installed path (or build/skills/ in editable mode); 5 tests in test_package_data.py cover path resolution, skill presence, SKILL.md presence, stage refs, and pyproject.toml config."
     },
     {
       "id": "US-011",

@@ -149,3 +149,17 @@
   - `references/__init__.py` is now an empty shell. It can be deleted in a future cleanup pass if nothing imports from the `references` package directly — for now, keeping it avoids breaking any external code that does `from threatsmith.frameworks.references import ...`.
   - After US-009, `FrameworkPack` has exactly 6 fields: `name`, `display_name`, `description`, `stages`, `report_stage`, `skill_name`. Any new framework pack needs only those.
 ---
+
+## 2026-06-28 - US-010
+- Bundled built skills as package data so the installed wheel is self-contained and `install-skills` (US-011) has a source to copy from.
+- `pyproject.toml`: added `[tool.hatch.build.targets.wheel.force-include]` mapping `"build/skills" = "threatsmith/_skills"` — the committed `build/skills/` directory is embedded in the wheel at `threatsmith/_skills/` at build time.
+- `pyproject.toml`: registered `slow` pytest mark to suppress warnings from the wheel-build integration test.
+- `src/threatsmith/_skills_data.py` (new): `get_bundled_skills_path()` — returns the skills path from `importlib.resources.files("threatsmith") / "_skills"` in an installed wheel; falls back to `build/skills/` in the repo root for editable/dev installs.
+- `tests/test_package_data.py` (new): 5 tests (+ 1 slow/excluded wheel-build test) covering path resolution, all skills present, SKILL.md per skill, stage refs present for framework skills, and the pyproject.toml force-include configuration.
+- Files changed: `pyproject.toml`, `src/threatsmith/_skills_data.py` (new), `tests/test_package_data.py` (new), `tasks/stories.json`, `tasks/progress.txt`. 118 tests pass (119 collected, 1 slow deselected).
+- **Learnings for future iterations:**
+  - `force-include` in hatchling only affects the built wheel/sdist — it does not affect editable installs. The `get_bundled_skills_path()` fallback to `build/skills/` is necessary for the dev environment and tests; this is not a hack, it's the intended dev-mode path.
+  - In Python 3.12, `importlib.resources.files("threatsmith") / "_skills"` returns a `Traversable`; `Path(str(...))` converts it. The `.is_dir()` check gates which path is used, so no exception is raised if the `_skills/` subdir doesn't exist in the package (editable mode).
+  - The `@pytest.mark.slow` wheel-build test (`TestWheelContainsBundledSkills`) is excluded from the default run. Run it explicitly with `uv run pytest -m slow` to confirm the built wheel contains the skills. It is the most direct verification of AC1.
+  - US-011 (`install-skills`) should call `get_bundled_skills_path()` to locate the source skills, then `shutil.copytree()` to the engine's skills directory.
+---

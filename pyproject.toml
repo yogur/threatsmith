@@ -30,8 +30,12 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/threatsmith"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"build/skills" = "threatsmith/_skills"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = ["slow: marks tests as slow (deselect with -m 'not slow')"]
 
 [tool.ruff]
 src = ["src"]
