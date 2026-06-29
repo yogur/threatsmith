@@ -445,3 +445,68 @@ def test_skills_list_no_args_shows_help():
 def test_skills_list_unknown_engine_errors():
     result = runner.invoke(app, ["skills", "list", "--engine", "nope"])
     assert result.exit_code == 1
+
+
+# --- pre-run skill validation (US-012) ---
+
+
+def test_missing_skill_exits_with_clear_error(tmp_path):
+    """CLI exits 1 with an actionable message when the required skill is not installed."""
+    skills_dir = tmp_path / "skills"
+    skills_dir.mkdir()
+    # Do NOT create the skill subdirectory — it's missing.
+    engine = _mock_engine_with_skills_dir(skills_dir)
+    mock_pack = MagicMock()
+    mock_pack.skill_name = "threatsmith-stride-4q"
+    with (
+        patch("threatsmith.main.get_engine", return_value=engine),
+        patch("threatsmith.main.get_framework", return_value=mock_pack),
+        patch("threatsmith.main.write_metadata"),
+    ):
+        result = runner.invoke(app, ["model", str(tmp_path), "--engine", "claude-code"])
+
+    assert result.exit_code == 1
+    assert "threatsmith-stride-4q" in result.output
+    assert "install" in result.output.lower()
+
+
+def test_missing_skill_error_names_engine(tmp_path):
+    """The error message names the engine so the user knows which install command to run."""
+    skills_dir = tmp_path / "skills"
+    skills_dir.mkdir()
+    engine = _mock_engine_with_skills_dir(skills_dir)
+    mock_pack = MagicMock()
+    mock_pack.skill_name = "threatsmith-pasta"
+    with (
+        patch("threatsmith.main.get_engine", return_value=engine),
+        patch("threatsmith.main.get_framework", return_value=mock_pack),
+        patch("threatsmith.main.write_metadata"),
+    ):
+        result = runner.invoke(app, ["model", str(tmp_path), "--engine", "codex"])
+
+    assert result.exit_code == 1
+    assert "codex" in result.output
+
+
+def test_skill_present_run_proceeds(tmp_path):
+    """CLI proceeds normally when the required skill directory is present."""
+    skills_dir = tmp_path / "skills"
+    (skills_dir / "threatsmith-stride-4q").mkdir(parents=True)
+    engine = _mock_engine_with_skills_dir(skills_dir)
+    mock_cls, mock_instance = _make_mock_orchestrator()
+    mock_pack = MagicMock()
+    mock_pack.skill_name = "threatsmith-stride-4q"
+    with (
+        patch("threatsmith.main.get_engine", return_value=engine),
+        patch("threatsmith.main.get_framework", return_value=mock_pack),
+        patch("threatsmith.main.Orchestrator", mock_cls),
+        patch(
+            "threatsmith.main.generate_metadata",
+            return_value=MagicMock(commit_hash="abc"),
+        ),
+        patch("threatsmith.main.write_metadata"),
+    ):
+        result = runner.invoke(app, ["model", str(tmp_path), "--engine", "claude-code"])
+
+    assert result.exit_code == 0
+    mock_instance.run.assert_called_once()

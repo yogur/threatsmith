@@ -162,6 +162,19 @@ def model(
     # Run the pipeline
     logger.info("Starting %s pipeline for: %s", pack.display_name, path)
     engine_instance = get_engine(engine, verbose=verbose)
+
+    # Validate that the required skill is installed before launching the pipeline
+    skill_path = engine_instance.skills_dir / pack.skill_name
+    if not skill_path.is_dir():
+        logger.error(
+            "Skill '%s' is not installed for engine '%s'. "
+            "Run 'threatsmith skills install --engine %s' to install it.",
+            pack.skill_name,
+            engine,
+            engine,
+        )
+        raise SystemExit(1)
+
     orchestrator = Orchestrator(
         engine=engine_instance,
         repo_path=path,

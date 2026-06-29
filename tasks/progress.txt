@@ -1,3 +1,13 @@
+## 2026-06-29 - US-012
+- Added pre-run skill validation to `src/threatsmith/main.py` `model` command: after resolving the engine and framework pack, checks `engine_instance.skills_dir / pack.skill_name` is a directory; exits 1 with a logger.error message naming the missing skill, the engine, and the exact install command to run.
+- Added three tests to `tests/test_cli.py`: missing skill → exit 1 + skill name in output + "install" in output; error names the engine (engine name appears in message); skill dir present → run proceeds (orchestrator.run called once).
+- Files changed: `src/threatsmith/main.py`, `tests/test_cli.py`, `tasks/stories.json`, `tasks/progress.txt`. 145 tests pass.
+- **Learnings for future iterations:**
+  - Existing tests that use `MagicMock()` for the engine continue to pass without changes: `MagicMock().skills_dir / MagicMock()` returns a `MagicMock()` via `__truediv__`, and `MagicMock().is_dir()` returns a truthy `MagicMock()`, so `not skill_path.is_dir()` is `False` and validation silently passes. No test fixup was needed.
+  - The installed-check (`skills_dir / skill_name` is a dir) is exactly what `list_skill_statuses` uses — intentional consistency per CLAUDE.md.
+  - Error message uses `logger.error()` (not `print()`), matching all other CLI failures; the message appears in `result.output` because Typer's CliRunner captures both stdout and stderr together.
+---
+
 ## Codebase Patterns
 - CLI is subcommand-based (since US-011): `threatsmith model <path>` runs a threat model (path is a required argument), `threatsmith skills install` installs bundled skills, `threatsmith skills list` shows install status per engine, `--list-frameworks` is a bare top-level flag on the root callback. The console-script entry point is the Typer `app` object, so command function names can change freely. In tests, prefix run invocations with `"model"` and skill commands with `["skills", "install"]` / `["skills", "list"]`; only `--list-frameworks` stays bare.
 - Per-engine install target: `Engine.skills_dir` (abstract property) returns where that engine loads personal skills — `~/.claude/skills` (claude-code), `~/.codex/skills` (codex). Any new engine must implement it. `skills install` reads it; that's how the install "accounts for the selected engine."

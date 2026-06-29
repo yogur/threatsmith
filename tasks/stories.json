@@ -194,8 +194,8 @@
       ],
       "sprint": 4,
       "priority": 12,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Added pre-run skill validation in the model command: after resolving the engine, checks engine.skills_dir / pack.skill_name is a directory; exits 1 with a message naming the skill and engine and pointing to 'threatsmith skills install --engine <engine>' if missing. Three new tests in test_cli.py cover: missing skill exits 1 + mentions skill name + says install; error names the engine; skill present → run proceeds. Existing tests unaffected (MagicMock().is_dir() is truthy). 145 tests pass."
     },
     {
       "id": "US-013",
