@@ -18,6 +18,7 @@ class ThreatSmithMetadata:
     engine: str
     framework: str
     framework_display_name: str
+    mode: str
     stages_completed: int
     commit_hash: str
     branch: str
@@ -31,6 +32,7 @@ class ThreatSmithMetadata:
 def generate_metadata(
     engine_name: str,
     framework: FrameworkPack,
+    mode: str = "from-code",
     stages_completed: int = 0,
     user_objectives: dict | None = None,
 ) -> ThreatSmithMetadata:
@@ -40,12 +42,13 @@ def generate_metadata(
     Args:
         engine_name: Name of the AI engine used (e.g., 'claude-code', 'codex')
         framework: The FrameworkPack used for this run
+        mode: Generation mode used for this run ('from-code' or 'from-docs')
         stages_completed: Number of pipeline stages that completed successfully
         user_objectives: Optional dict with 'business' and/or 'security' keys
 
     Returns:
         ThreatSmithMetadata dataclass with threatsmith_version, engine, framework,
-        framework_display_name, stages_completed, commit_hash, branch, timestamp
+        framework_display_name, mode, stages_completed, commit_hash, branch, timestamp
         (ISO 8601), and user_objectives
     """
     # Get commit hash
@@ -78,6 +81,7 @@ def generate_metadata(
         engine=engine_name,
         framework=framework.name,
         framework_display_name=framework.display_name,
+        mode=mode,
         stages_completed=stages_completed,
         commit_hash=commit_hash,
         branch=branch,

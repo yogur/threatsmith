@@ -18,6 +18,9 @@ from threatsmith.utils.metadata import generate_metadata, write_metadata
 
 logger = logging.getLogger(__name__)
 
+# Generation modes the CLI can drive. `pair` is interactive and skill-only.
+_CLI_MODES = ("from-code", "from-docs")
+
 
 app = typer.Typer(add_completion=False)
 skills_app = typer.Typer(
@@ -115,6 +118,13 @@ def model(
         str | None,
         typer.Option(help="Threat modeling framework to use", show_default="stride-4q"),
     ] = None,
+    mode: Annotated[
+        str,
+        typer.Option(
+            help="Generation mode: 'from-code' or 'from-docs' "
+            "('pair' is interactive and skill-only)"
+        ),
+    ] = "from-code",
     business_objectives: Annotated[
         str | None,
         typer.Option(help="Optional business objectives to inject into the analysis"),
@@ -136,6 +146,19 @@ def model(
     _print_logo()
     if not os.path.isdir(path):
         logger.error("Path does not exist or is not a directory: %s", path)
+        raise SystemExit(1)
+
+    # Validate generation mode; pair is interactive and skill-only, not a CLI mode.
+    if mode == "pair":
+        logger.error(
+            "Mode 'pair' is interactive and skill-only; it is not available on the CLI. "
+            "Use 'from-code' or 'from-docs'."
+        )
+        raise SystemExit(1)
+    if mode not in _CLI_MODES:
+        logger.error(
+            "Invalid mode '%s'. Choose one of: %s.", mode, ", ".join(_CLI_MODES)
+        )
         raise SystemExit(1)
 
     # Load config file; CLI --framework takes precedence over config file
@@ -180,6 +203,7 @@ def model(
         repo_path=path,
         pack=pack,
         output_dir=output_dir,
+        mode=mode,
         user_objectives=user_objectives,
     )
     exit_code = orchestrator.run()
@@ -188,6 +212,7 @@ def model(
     metadata = generate_metadata(
         engine_name=engine,
         framework=pack,
+        mode=mode,
         stages_completed=orchestrator.stages_completed,
         user_objectives={
             "business": business_objectives,

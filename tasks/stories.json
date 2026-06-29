@@ -210,8 +210,8 @@
       ],
       "sprint": 4,
       "priority": 13,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Added --mode option to the model command (from-code default / from-docs); pair is rejected with a 'skill-only' message and any other value errors (exit 1, before engine resolution). Mode is passed to Orchestrator (mode=) and recorded via generate_metadata(mode=). Added mode field to ThreatSmithMetadata and a mode param (default from-code) to generate_metadata, inserted before stages_completed; all call sites use keyword args so ordering is safe. Tests: CLI default/from-docs/pair-rejection/invalid-mode in test_cli.py, metadata default+records-mode in test_metadata.py, plus mode= added to the three direct ThreatSmithMetadata constructions. Scanner fields were already absent. 151 tests pass."
     },
     {
       "id": "US-014",

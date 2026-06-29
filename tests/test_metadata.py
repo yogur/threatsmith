@@ -47,6 +47,37 @@ def test_generate_metadata_returns_all_required_fields():
         assert isinstance(metadata.user_objectives, dict)
 
 
+def test_generate_metadata_mode_default_from_code():
+    """mode defaults to 'from-code' when not supplied."""
+    with patch("subprocess.run") as mock_run:
+        mock_run.side_effect = [
+            type("obj", (object,), {"stdout": "hash\n", "returncode": 0})(),
+            type("obj", (object,), {"stdout": "br\n", "returncode": 0})(),
+        ]
+
+        metadata = generate_metadata(engine_name="claude-code", framework=_FRAMEWORK)
+
+        assert metadata.mode == "from-code"
+
+
+def test_generate_metadata_records_mode():
+    """The selected mode is recorded in metadata and serialized JSON."""
+    with patch("subprocess.run") as mock_run:
+        mock_run.side_effect = [
+            type("obj", (object,), {"stdout": "hash\n", "returncode": 0})(),
+            type("obj", (object,), {"stdout": "br\n", "returncode": 0})(),
+        ]
+
+        metadata = generate_metadata(
+            engine_name="claude-code",
+            framework=_FRAMEWORK,
+            mode="from-docs",
+        )
+
+        assert metadata.mode == "from-docs"
+        assert metadata.to_dict()["mode"] == "from-docs"
+
+
 def test_generate_metadata_no_scanner_fields():
     """ThreatSmithMetadata does not include scanner availability fields."""
     with patch("subprocess.run") as mock_run:
@@ -142,6 +173,7 @@ def test_write_metadata_creates_json_file():
             engine="claude-code",
             framework="stride-4q",
             framework_display_name="4QF + STRIDE",
+            mode="from-code",
             stages_completed=5,
             commit_hash="abc123",
             branch="main",
@@ -170,6 +202,7 @@ def test_write_metadata_json_has_no_scanner_fields():
             engine="claude-code",
             framework="stride-4q",
             framework_display_name="4QF + STRIDE",
+            mode="from-code",
             stages_completed=5,
             commit_hash="abc123",
             branch="main",
@@ -196,6 +229,7 @@ def test_write_metadata_creates_directory_if_needed():
             engine="claude-code",
             framework="stride-4q",
             framework_display_name="4QF + STRIDE",
+            mode="from-code",
             stages_completed=0,
             commit_hash="hash",
             branch="branch",

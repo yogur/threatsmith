@@ -6,9 +6,11 @@
 > orchestration metadata, and CLI-side reference conditions + scanner detection are gone.
 > Built skills are bundled as package data (US-010) and the CLI now exposes subcommands —
 > `threatsmith model <path>` runs a threat model and `threatsmith skills install` installs
-> the bundled skills into the selected engine's skills directory (US-011).
-> **Still pending (sprints 4–5, US-012…US-017):** pre-run skill validation, the `--mode`
-> CLI flag + metadata `mode` field, E2E coverage, and docs. See `tasks/threatsmith-skills-prd.md` and
+> the bundled skills into the selected engine's skills directory (US-011). Pre-run skill
+> validation exits with an actionable error if the required skill is missing (US-012), and
+> `model --mode` selects `from-code` (default) or `from-docs` (`pair` is rejected as
+> skill-only) with the mode recorded in `metadata.json` (US-013).
+> **Still pending (sprint 5, US-014…US-017):** E2E coverage and docs. See `tasks/threatsmith-skills-prd.md` and
 > `tasks/stories.json`. This file describes the *current* code; the PRD is authoritative
 > for the remaining target design.
 
@@ -99,7 +101,7 @@ _build_skills.py     ← stdlib only (shutil/pathlib)
 - **`or None` guards**: `objectives.get("business_objectives") or None` treats both missing and empty-string values as absent.
 - **Frozen packs**: `StageSpec` / `FrameworkPack` are `frozen=True`. The built-in `STRIDE_4Q` / `PASTA` singletons are safe to share; construct a fresh pack in tests when you need different field values.
 - **Logging**: modules use `logger = logging.getLogger(__name__)`. CLI configures via `configure_logging(verbose)` in `utils/logging.py`. DEBUG = verbose, INFO = progress, WARNING/ERROR = failures.
-- **metadata.json**: `generate_metadata(engine_name, framework, stages_completed, user_objectives)` returns a `ThreatSmithMetadata` dataclass (no scanner fields). Written *after* the run so `stages_completed` is accurate. `write_metadata(output_dir, metadata)` serializes to JSON. Provenance only — no consumer is required to read it.
+- **metadata.json**: `generate_metadata(engine_name, framework, mode, stages_completed, user_objectives)` returns a `ThreatSmithMetadata` dataclass (records the generation `mode`; no scanner fields). Written *after* the run so `stages_completed` is accurate. `write_metadata(output_dir, metadata)` serializes to JSON. Provenance only — no consumer is required to read it.
 - **CLI structure**: `app` is a Typer app with a root callback (`_root`) carrying the eager `--list-frameworks` flag, a `model` command (the run; `path` is a required argument), and a `skills` sub-Typer with `install` (copies bundled skills into the engine's `skills_dir`) and `list` (shows each bundled skill and whether it is installed for the engine). Add new top-level verbs as `@app.command()`; group skill-management verbs under `skills_app`. The console-script entry point is the `app` object (`threatsmith.main:app`), so renaming command functions is safe.
 - **Engine install target**: each `Engine` exposes a `skills_dir` property (abstract on the base) — `~/.claude/skills` for claude-code, `~/.codex/skills` for codex. `skills install` resolves the engine, reads `skills_dir`, and calls `install_skills()`. This is how "the install target accounts for the selected engine."
 - **`--engine` is required on all commands (no default)** — `model`, `skills install`, `skills list`. For the skills commands the engine selects a filesystem destination, so a default would silently target the wrong agent; `model` requires it too for consistency. Required options use the Annotated form with no `= default` and `show_default=False` (the latter suppresses Typer's cosmetic `[default: None]` line). Don't reintroduce a default without revisiting the footgun.

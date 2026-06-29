@@ -332,6 +332,114 @@ def test_cli_framework_overrides_config_file(tmp_path):
     mock_get_framework.assert_called_once_with("stride-4q")
 
 
+# --- --mode flag ---
+
+
+def test_default_mode_is_from_code(tmp_path):
+    """The mode defaults to from-code and is passed to the orchestrator and metadata."""
+    mock_cls, mock_instance = _make_mock_orchestrator()
+    captured = {}
+
+    def capture_orchestrator(*args, **kwargs):
+        captured.update(kwargs)
+        return mock_instance
+
+    mock_cls.side_effect = capture_orchestrator
+
+    with (
+        patch("threatsmith.main.get_engine", return_value=MagicMock()),
+        patch("threatsmith.main.get_framework", return_value=MagicMock()),
+        patch("threatsmith.main.Orchestrator", mock_cls),
+        patch(
+            "threatsmith.main.generate_metadata",
+            return_value=MagicMock(commit_hash="abc"),
+        ) as mock_gen_metadata,
+        patch("threatsmith.main.write_metadata"),
+    ):
+        result = runner.invoke(app, ["model", str(tmp_path), "--engine", "claude-code"])
+
+    assert result.exit_code == 0
+    assert captured.get("mode") == "from-code"
+    assert mock_gen_metadata.call_args.kwargs["mode"] == "from-code"
+
+
+def test_explicit_mode_from_docs(tmp_path):
+    """--mode from-docs is passed to the orchestrator and recorded in metadata."""
+    mock_cls, mock_instance = _make_mock_orchestrator()
+    captured = {}
+
+    def capture_orchestrator(*args, **kwargs):
+        captured.update(kwargs)
+        return mock_instance
+
+    mock_cls.side_effect = capture_orchestrator
+
+    with (
+        patch("threatsmith.main.get_engine", return_value=MagicMock()),
+        patch("threatsmith.main.get_framework", return_value=MagicMock()),
+        patch("threatsmith.main.Orchestrator", mock_cls),
+        patch(
+            "threatsmith.main.generate_metadata",
+            return_value=MagicMock(commit_hash="abc"),
+        ) as mock_gen_metadata,
+        patch("threatsmith.main.write_metadata"),
+    ):
+        result = runner.invoke(
+            app,
+            ["model", str(tmp_path), "--engine", "claude-code", "--mode", "from-docs"],
+        )
+
+    assert result.exit_code == 0
+    assert captured.get("mode") == "from-docs"
+    assert mock_gen_metadata.call_args.kwargs["mode"] == "from-docs"
+
+
+def test_mode_pair_rejected_as_skill_only(tmp_path):
+    """--mode pair is rejected with a message that pair is skill-only; no run happens."""
+    mock_cls, mock_instance = _make_mock_orchestrator()
+    with (
+        patch("threatsmith.main.get_engine", return_value=MagicMock()),
+        patch("threatsmith.main.get_framework", return_value=MagicMock()),
+        patch("threatsmith.main.Orchestrator", mock_cls),
+        patch(
+            "threatsmith.main.generate_metadata",
+            return_value=MagicMock(commit_hash="abc"),
+        ),
+        patch("threatsmith.main.write_metadata"),
+    ):
+        result = runner.invoke(
+            app,
+            ["model", str(tmp_path), "--engine", "claude-code", "--mode", "pair"],
+        )
+
+    assert result.exit_code == 1
+    assert "pair" in result.output.lower()
+    assert "skill-only" in result.output.lower()
+    mock_instance.run.assert_not_called()
+
+
+def test_invalid_mode_rejected(tmp_path):
+    """An unrecognized mode errors rather than silently proceeding."""
+    mock_cls, mock_instance = _make_mock_orchestrator()
+    with (
+        patch("threatsmith.main.get_engine", return_value=MagicMock()),
+        patch("threatsmith.main.get_framework", return_value=MagicMock()),
+        patch("threatsmith.main.Orchestrator", mock_cls),
+        patch(
+            "threatsmith.main.generate_metadata",
+            return_value=MagicMock(commit_hash="abc"),
+        ),
+        patch("threatsmith.main.write_metadata"),
+    ):
+        result = runner.invoke(
+            app,
+            ["model", str(tmp_path), "--engine", "claude-code", "--mode", "bogus"],
+        )
+
+    assert result.exit_code == 1
+    mock_instance.run.assert_not_called()
+
+
 # --- skills install ---
 
 
